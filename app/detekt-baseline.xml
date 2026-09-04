@@ -1,0 +1,323 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AppUI.kt$@Composable fun BuilderMode()</ID>
+    <ID>CyclomaticComplexMethod:GltfAnimation.kt$GltfAnimation$fun apply( timeSeconds: Float, avatar: HdAvatar? ): Boolean</ID>
+    <ID>CyclomaticComplexMethod:GltfAnimation.kt$GltfAnimation$private fun parseAnimations(animations: JSONArray)</ID>
+    <ID>CyclomaticComplexMethod:GltfAvatarLoader.kt$GltfAvatarLoader$private fun buildPrimitive( primitive: GltfPrimitive, document: GltfDocument, binary: ByteArray ): GpuMesh</ID>
+    <ID>CyclomaticComplexMethod:GltfTextures.kt$GltfTextures$fun resolve(avatar: HdAvatar)</ID>
+    <ID>CyclomaticComplexMethod:HdAvatarRenderer.kt$HdAvatarRenderer$fun updateAppearance(skinTone: String, eyeColor: String, hairColor: String, atmosphere: String)</ID>
+    <ID>CyclomaticComplexMethod:PbrPipeline.kt$PbrPipeline$private fun buildMeshGpu( mesh: GpuMesh, jointCount: Int ): MeshGpu</ID>
+    <ID>CyclomaticComplexMethod:PbrPipeline.kt$PbrPipeline$private fun drawMesh( gpu: MeshGpu, mesh: GpuMesh, model: FloatArray, view: FloatArray, proj: FloatArray, cameraPos: FloatArray, lights: FloatArray, lightCount: Int, exposure: Float, iblIntensity: Float, timeSeconds: Float, jointCount: Int, blendPass: Boolean )</ID>
+    <ID>CyclomaticComplexMethod:SkeletonMatrices.kt$SkeletonMatrices$fun buildRuntime( document: GltfDocument, binary: ByteArray ): Runtime?</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AccessoriesPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AnimationsPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AppUI(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AppearancePanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AtmospherePanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun AugmentsPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun BodyPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun BottomActionPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun BuilderMode()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun ChatMode()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun ClothingPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun EyesPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun FacePanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun HairPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun PresetsMode()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun SettingsScreen()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun TattoosPanel()</ID>
+    <ID>FunctionNaming:AppUI.kt$@Composable fun TopHeader(selected: String, onTabSelected: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:GltfAvatarView.kt$GltfAvatarView$fun playAnimation_old(name: String)</ID>
+    <ID>FunctionNaming:Theme.kt$@Composable fun AvatarStudioTheme( // Force dark theme for this UI darkTheme: Boolean = true, dynamicColor: Boolean = false, content: @Composable () -&gt; Unit )</ID>
+    <ID>LongMethod:AppUI.kt$@Composable fun BuilderMode()</ID>
+    <ID>LongMethod:AppUI.kt$@Composable fun ChatMode()</ID>
+    <ID>LongMethod:CoreModel.kt$MeshGeometry$fun generateTangents( positions: FloatArray, normals: FloatArray, uvs: FloatArray, indices: IntArray? ): FloatArray</ID>
+    <ID>LongMethod:GltfAnimation.kt$GltfAnimation$fun apply( timeSeconds: Float, avatar: HdAvatar? ): Boolean</ID>
+    <ID>LongMethod:GltfAvatarLoader.kt$GltfAvatarLoader$fun loadGlb( bytes: ByteArray ): HdAvatar</ID>
+    <ID>LongMethod:GltfAvatarLoader.kt$GltfAvatarLoader$private fun buildPrimitive( primitive: GltfPrimitive, document: GltfDocument, binary: ByteArray ): GpuMesh</ID>
+    <ID>LongMethod:GltfAvatarLoader.kt$GltfAvatarLoader$private fun readFloatAttribute( accessorIndex: Int?, document: GltfDocument, binary: ByteArray, expectedComponents: Int ): FloatArray</ID>
+    <ID>LongMethod:GltfModel.kt$GltfDocument.Companion$fun parse( source: String ): GltfDocument</ID>
+    <ID>LongMethod:GltfModel.kt$GltfMaterial.Companion$fun from( json: JSONObject ): GltfMaterial</ID>
+    <ID>LongMethod:GltfTextures.kt$GltfTextures$fun uploadImage( imageIndex: Int, samplerIndex: Int?, srgb: Boolean ): Int</ID>
+    <ID>LongMethod:HdAvatarRenderer.kt$HdAvatarRenderer$fun updateAppearance(skinTone: String, eyeColor: String, hairColor: String, atmosphere: String)</ID>
+    <ID>LongMethod:HdTextureManager.kt$HdTextureManager$private fun createTexture( bitmap: Bitmap, srgb: Boolean ): HdTexture?</ID>
+    <ID>LongMethod:PbrPipeline.kt$PbrPipeline$private fun buildMeshGpu( mesh: GpuMesh, jointCount: Int ): MeshGpu</ID>
+    <ID>LongMethod:PbrPipeline.kt$PbrPipeline$private fun drawMesh( gpu: MeshGpu, mesh: GpuMesh, model: FloatArray, view: FloatArray, proj: FloatArray, cameraPos: FloatArray, lights: FloatArray, lightCount: Int, exposure: Float, iblIntensity: Float, timeSeconds: Float, jointCount: Int, blendPass: Boolean )</ID>
+    <ID>LongMethod:PbrTexture.kt$PbrTexture$private fun upload( bitmap: Bitmap, srgb: Boolean ): Int</ID>
+    <ID>LongParameterList:AvatarShaders.kt$AvatarShaders$( lightCount: Int, hasBaseTex: Boolean, hasMrTex: Boolean, hasNormalTex: Boolean, hasOcclusionTex: Boolean, hasEmissiveTex: Boolean, hasEmissive: Boolean, hasTangent: Boolean, useIbl: Boolean, usePrefilter: Boolean, alphaMode: String )</ID>
+    <ID>LongParameterList:CoreModel.kt$HdPbrMaterial$( var baseColor: FloatArray = floatArrayOf(1f, 1f, 1f, 1f), var metallic: Float = 0f, var roughness: Float = 0.5f, var emissive: FloatArray = floatArrayOf(0f, 0f, 0f), var normalScale: Float = 1f, var occlusionStrength: Float = 1f, var alphaMode: String = "OPAQUE", var doubleSided: Boolean = false, // loader-side glTF texture references var baseColorTextureIndex: Int = -1, var metallicRoughnessTextureIndex: Int = -1, var normalTextureIndex: Int = -1, var occlusionTextureIndex: Int = -1, var emissiveTextureIndex: Int = -1, // GL-side texture ids (filled on the GL thread) var baseColorTexture: Int = 0, var metallicRoughnessTexture: Int = 0, var normalTexture: Int = 0, var occlusionTexture: Int = 0, var emissiveTexture: Int = 0 )</ID>
+    <ID>LongParameterList:PbrPipeline.kt$PbrPipeline$( avatar: HdAvatar, modelMatrix: FloatArray, viewMatrix: FloatArray, projMatrix: FloatArray, cameraPos: FloatArray, lights: FloatArray, lightCount: Int, exposure: Float, iblIntensity: Float, timeSeconds: Float )</ID>
+    <ID>LongParameterList:PbrPipeline.kt$PbrPipeline$( gpu: MeshGpu, mesh: GpuMesh, model: FloatArray, view: FloatArray, proj: FloatArray, cameraPos: FloatArray, lights: FloatArray, lightCount: Int, exposure: Float, iblIntensity: Float, timeSeconds: Float, jointCount: Int, blendPass: Boolean )</ID>
+    <ID>LongParameterList:PbrPipeline.kt$PbrPipeline.MeshGpu$( val program: Int, val vao: Int, val buffers: IntArray, val indexBuffer: Int, val indexCount: Int, val hasIndices: Boolean, val morphCount: Int, val skinned: Boolean, val alphaMode: String, val doubleSided: Boolean, val locs: ProgramLocs )</ID>
+    <ID>LoopWithTooManyJumpStatements:GltfAnimation.kt$GltfAnimation$for</ID>
+    <ID>MagicNumber:AppUI.kt$0.7f</ID>
+    <ID>MagicNumber:AppUI.kt$0.85f</ID>
+    <ID>MagicNumber:AppUI.kt$0xFF291509</ID>
+    <ID>MagicNumber:AppUI.kt$0xFF5C3317</ID>
+    <ID>MagicNumber:AppUI.kt$0xFF6B4423</ID>
+    <ID>MagicNumber:AppUI.kt$0xFF8D5524</ID>
+    <ID>MagicNumber:AppUI.kt$0xFFB48A6F</ID>
+    <ID>MagicNumber:AppUI.kt$0xFFD2B49D</ID>
+    <ID>MagicNumber:AppUI.kt$0xFFF0D5BE</ID>
+    <ID>MagicNumber:AppUI.kt$0xFFFFDFC4</ID>
+    <ID>MagicNumber:AppUI.kt$1.5f</ID>
+    <ID>MagicNumber:AppUI.kt$3</ID>
+    <ID>MagicNumber:AppUI.kt$7</ID>
+    <ID>MagicNumber:AppUI.kt$900</ID>
+    <ID>MagicNumber:AvatarShaders.kt$AvatarShaders$8</ID>
+    <ID>MagicNumber:AvatarState.kt$AvatarState$18f</ID>
+    <ID>MagicNumber:AvatarState.kt$AvatarState$4f</ID>
+    <ID>MagicNumber:AvatarState.kt$AvatarState$50f</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$10</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$16</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$1e-12f</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$3</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$4</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$5</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$6</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$8</ID>
+    <ID>MagicNumber:CoreModel.kt$Mat4$9</ID>
+    <ID>MagicNumber:CoreModel.kt$MeshGeometry$1e-12f</ID>
+    <ID>MagicNumber:CoreModel.kt$MeshGeometry$3</ID>
+    <ID>MagicNumber:CoreModel.kt$MeshGeometry$4</ID>
+    <ID>MagicNumber:GeminiService.kt$RetrofitClient$60</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$0xFF</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$0xFFFF</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$1e-6f</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$1e-8f</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$3</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$4</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$5121</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$5123</ID>
+    <ID>MagicNumber:GltfAnimation.kt$GltfAnimation$5126</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$0xFF</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$0xFFFF</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$12</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$127f</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$20</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$255f</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$3</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$32767f</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$4</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$65535f</ID>
+    <ID>MagicNumber:GltfAvatarLoader.kt$GltfAvatarLoader$8</ID>
+    <ID>MagicNumber:GltfAvatarView.kt$GltfAvatarView$24</ID>
+    <ID>MagicNumber:GltfAvatarView.kt$GltfAvatarView$3</ID>
+    <ID>MagicNumber:GltfAvatarView.kt$GltfAvatarView$4</ID>
+    <ID>MagicNumber:GltfAvatarView.kt$GltfAvatarView$8</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$16</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$3</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$4</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5120</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5121</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5122</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5123</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5125</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$5126</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfAccessor$9</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfDocument.Companion$10497</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfDocument.Companion$3</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfDocument.Companion$4</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfDocument.Companion$9729</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfDocument.Companion$9987</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfMaterial.Companion$3</ID>
+    <ID>MagicNumber:GltfModel.kt$GltfMaterial.Companion$4</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$0x84FE</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$0x84FF</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$10497</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$4</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$9728</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$9729</ID>
+    <ID>MagicNumber:GltfTextures.kt$GltfTextures$9987</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.02f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.03f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.05f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.08f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.15f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.1f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.25f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.2f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.30f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.34f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.35f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.3f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.40f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.45f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.4f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.55f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.5f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.62f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.65f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.6f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.70f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.75f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.7f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.80f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.85f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.8f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.90f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.92f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.95f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$0.9f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.1f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.25f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.2f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.35f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.3f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.45f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.4f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.65f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1.6f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$12</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1e-3f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$1e9f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$2.4f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$2.6f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$24</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$3</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$4</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$45f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$4f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$5</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$5f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$6</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$60f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$7</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$7.0f</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$8</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$84</ID>
+    <ID>MagicNumber:HdAvatarRenderer.kt$HdAvatarRenderer$8f</ID>
+    <ID>MagicNumber:HdTextureManager.kt$HdTextureManager$16</ID>
+    <ID>MagicNumber:HdTextureManager.kt$HdTextureManager$8.0f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.05f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.10f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.12f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.26f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.28f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.42f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.48f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.62f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$0.86f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$1e6f</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$3</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$36</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$4</ID>
+    <ID>MagicNumber:IblEnvironment.kt$IblEnvironment$6</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$400</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$401</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$403</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$404</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$500</ID>
+    <ID>MagicNumber:NetworkErrorHandler.kt$NetworkErrorHandler$503</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$0.5f</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$0xFF</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$16</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$3</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$4</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$5</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$6</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$7</ID>
+    <ID>MagicNumber:PbrPipeline.kt$PbrPipeline$8</ID>
+    <ID>MagicNumber:PbrTexture.kt$PbrTexture$0x84FE</ID>
+    <ID>MagicNumber:PbrTexture.kt$PbrTexture$0x84FF</ID>
+    <ID>MagicNumber:ShaderUtil.kt$ShaderUtil$4</ID>
+    <ID>MagicNumber:SkeletonMatrices.kt$SkeletonMatrices$16</ID>
+    <ID>MagicNumber:SkeletonMatrices.kt$SkeletonMatrices$4</ID>
+    <ID>MagicNumber:SkeletonMatrices.kt$SkeletonMatrices$5</ID>
+    <ID>MagicNumber:SkeletonMatrices.kt$SkeletonMatrices$5126</ID>
+    <ID>MagicNumber:SkeletonMatrices.kt$SkeletonMatrices$64</ID>
+    <ID>MagicNumber:Theme.kt$0xFF00F2FE</ID>
+    <ID>MagicNumber:Theme.kt$0xFF0A0B10</ID>
+    <ID>MagicNumber:Theme.kt$0xFF13141C</ID>
+    <ID>MagicNumber:Theme.kt$0xFF1C1D29</ID>
+    <ID>MagicNumber:Theme.kt$0xFF2D2E3A</ID>
+    <ID>MagicNumber:Theme.kt$0xFF4A148C</ID>
+    <ID>MagicNumber:Theme.kt$0xFF904EDD</ID>
+    <ID>MagicNumber:Theme.kt$0xFFA0A0B0</ID>
+    <ID>MaxLineLength:AppUI.kt$.</ID>
+    <ID>MaxLineLength:AppUI.kt$Box</ID>
+    <ID>MaxLineLength:AppUI.kt$Box(modifier = Modifier.size(20.dp).background(if(isSelected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape))</ID>
+    <ID>MaxLineLength:AppUI.kt$Card</ID>
+    <ID>MaxLineLength:AppUI.kt$LazyVerticalGrid</ID>
+    <ID>MaxLineLength:AppUI.kt$Row</ID>
+    <ID>MaxLineLength:AppUI.kt$Slider(value = state.age, onValueChange = { state.age = it }, valueRange = 18f..80f, colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary))</ID>
+    <ID>MaxLineLength:AppUI.kt$Slider(value = state.headShape, onValueChange = { state.headShape = it }, valueRange = 1f..12f, colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary))</ID>
+    <ID>MaxLineLength:AppUI.kt$Text("Enables full PBR pipelines, MSAA, and 2K textures.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text("MATRIX_07_8X9A", fontSize = 12.sp, color = Color.White, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(acc, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(aug, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(cat, fontSize = 7.sp, color = if(isSelected) MaterialTheme.colorScheme.primary else Color.Gray, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(item, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(label, fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top=4.dp))</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(preset.name, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.align(Alignment.Center))</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(shape, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(startupMessage, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(style, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$Text(tattoo, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)</ID>
+    <ID>MaxLineLength:AppUI.kt$color = if(subTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaxLineLength:AppUI.kt$colors = ButtonDefaults.buttonColors(containerColor = if (base64Image != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)</ID>
+    <ID>MaxLineLength:AppUI.kt$factory = { context -&gt; GltfAvatarView(context, "avatars/my_avatar.glb").also { state.avatarView = it } }</ID>
+    <ID>MaxLineLength:AppUI.kt$onClick = { launcher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }</ID>
+    <ID>MaxLineLength:AppUI.kt$onClick = { scope.launch(kotlinx.coroutines.Dispatchers.IO) { dao.deletePreset(preset.id) } }</ID>
+    <ID>MaxLineLength:AppUI.kt$val accessories = listOf("Aviators", "Respirator", "Holo-Visor", "Ear Cuff", "Goggles", "Choker", "Neural Link", "Bandana", "Cyber-Patch")</ID>
+    <ID>MaxLineLength:AppUI.kt$val atmospheres = listOf("Neon Cityscape", "Dark Studio", "Blood Red Mist", "Vampire Lair", "Fiery Hellscape", "Neutral Studio")</ID>
+    <ID>MaxLineLength:AppUI.kt$val atmospheres = listOf("Neon Cityscape", "Vampire Lair", "Fiery Hellscape", "Neutral Studio", "Blood Red Mist")</ID>
+    <ID>MaxLineLength:AppUI.kt$val hairstyles = listOf("Buzz Cut", "Undercut", "Cyber Dreads", "Neon Bob", "Mohawk", "Slicked Back", "Pixie Cut", "Long Waves", "Braided")</ID>
+    <ID>MaxLineLength:AppUI.kt$val messages = listOf("CALIBRATING ARMOR...", "SYNCING ATMOSPHERE...", "LOADING NEURO-OPTICS...", "BOOT SEQUENCE COMPLETE")</ID>
+    <ID>MaxLineLength:AppUI.kt$val resultJson = com.aura.avatarstudio.api.generateAvatarConfigWithImage(aiPrompt, base64Image)</ID>
+    <ID>MaxLineLength:AppUI.kt$val tattoos = listOf("Barcode", "Circuitry", "Yakuza Dragon", "Neon Lotus", "Tribal", "Hex Pattern", "Cyber-Skull", "Kanji", "Geometric")</ID>
+    <ID>MaxLineLength:AppUI.kt$val tones = listOf(Color(0xFFFFDFC4), Color(0xFFF0D5BE), Color(0xFFD2B49D), Color(0xFFB48A6F), Color(0xFF8D5524), Color(0xFF5C3317), Color(0xFF291509))</ID>
+    <ID>MaxLineLength:AppUI.kt$var messages by remember { mutableStateOf(listOf(Pair("Avatar", "Neural link established. What's the job, chombatta?"))) }</ID>
+    <ID>MaxLineLength:GeminiService.kt$suspend</ID>
+    <ID>MaxLineLength:GeminiService.kt$systemInstruction = Content(parts = listOf(Part(text = "You are a Cyberpunk Avatar configurator. Output exact matching indices for the avatar configuration in the requested JSON structure based on the prompt or provided image.")))</ID>
+    <ID>MaxLineLength:GeminiService.kt$systemInstruction = Content(parts = listOf(Part(text = "You are a Cyberpunk Avatar configurator. The user gives a prompt, and you must output the exact matching indices for their avatar configuration in the requested JSON structure.")))</ID>
+    <ID>MaxLineLength:GeminiService.kt$systemInstruction = Content(parts = listOf(Part(text = "You are roleplaying as the user's custom Cyberpunk avatar. Respond in-character, using cyberpunk slang (chombatta, eddies, chrome, netrunner, etc.). Keep responses short, punchy, and immersive.")))</ID>
+    <ID>MaxLineLength:GltfAvatarView.kt$GltfAvatarView.&lt;no name provided&gt;$override</ID>
+    <ID>MayBeConst:GltfTextures.kt$GltfTextures$private val TAG = "GltfTextures"</ID>
+    <ID>NestedBlockDepth:GltfAnimation.kt$GltfAnimation$fun apply( timeSeconds: Float, avatar: HdAvatar? ): Boolean</ID>
+    <ID>NestedBlockDepth:HdAvatarRenderer.kt$HdAvatarRenderer$override fun onDrawFrame(gl: GL10?)</ID>
+    <ID>NestedBlockDepth:SkeletonMatrices.kt$SkeletonMatrices$fun buildRuntime( document: GltfDocument, binary: ByteArray ): Runtime?</ID>
+    <ID>PrintStackTrace:AppUI.kt$e</ID>
+    <ID>ReturnCount:GltfAnimation.kt$GltfAnimations$fun forAvatar( avatar: HdAvatar ): GltfAnimation?</ID>
+    <ID>ReturnCount:GltfAvatarLoader.kt$GltfAvatarLoader$private fun readFloatAttribute( accessorIndex: Int?, document: GltfDocument, binary: ByteArray, expectedComponents: Int ): FloatArray</ID>
+    <ID>ReturnCount:GltfTextures.kt$GltfTextures$fun imagePixels(image: GltfImage): Bitmap?</ID>
+    <ID>ReturnCount:GltfTextures.kt$GltfTextures$fun uploadImage( imageIndex: Int, samplerIndex: Int?, srgb: Boolean ): Int</ID>
+    <ID>ReturnCount:HdTextureManager.kt$HdTextureManager$fun load( assetPath: String, srgb: Boolean = false, flipY: Boolean = false ): HdTexture?</ID>
+    <ID>ReturnCount:HdTextureManager.kt$HdTextureManager$fun loadResource( resourceId: Int, srgb: Boolean = false ): HdTexture?</ID>
+    <ID>ReturnCount:SkeletonMatrices.kt$SkeletonMatrices$fun buildRuntime( document: GltfDocument, binary: ByteArray ): Runtime?</ID>
+    <ID>ReturnCount:SkeletonMatrices.kt$SkeletonMatrices$fun computeGlobal(nodeIndex: Int): FloatArray</ID>
+    <ID>TooGenericExceptionCaught:AppUI.kt$e: Exception</ID>
+    <ID>TooManyFunctions:AppUI.kt$com.aura.avatarstudio.ui.AppUI.kt</ID>
+    <ID>TooManyFunctions:CoreModel.kt$Mat4</ID>
+    <ID>TooManyFunctions:GltfAvatarLoader.kt$GltfAvatarLoader</ID>
+    <ID>TooManyFunctions:HdAvatarRenderer.kt$HdAvatarRenderer : Renderer</ID>
+    <ID>TooManyFunctions:IblEnvironment.kt$IblEnvironment</ID>
+    <ID>UnusedParameter:HdAvatarRenderer.kt$HdAvatarRenderer$eyeColor: String</ID>
+    <ID>UnusedParameter:PbrPipeline.kt$PbrPipeline$blendPass: Boolean</ID>
+    <ID>UnusedParameter:Theme.kt$darkTheme: Boolean = true</ID>
+    <ID>UnusedParameter:Theme.kt$dynamicColor: Boolean = false</ID>
+    <ID>UnusedPrivateProperty:HdAvatarRenderer.kt$HdAvatarRenderer$private val context: Context? = null</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private const val SAMPLE_COUNT = 1024</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private val groundLoc = HashMap&lt;Int, Int&gt;()</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private val horizonLoc = HashMap&lt;Int, Int&gt;()</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private val sunDirLoc = HashMap&lt;Int, Int&gt;()</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private val sunLoc = HashMap&lt;Int, Int&gt;()</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private val zenithLoc = HashMap&lt;Int, Int&gt;()</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private var cubeVbo = 0</ID>
+    <ID>UnusedPrivateProperty:IblEnvironment.kt$IblEnvironment$private var quadVbo = 0</ID>
+    <ID>UseCheckOrError:IblEnvironment.kt$IblEnvironment$throw IllegalStateException("$tag compile failed: $log")</ID>
+    <ID>UseCheckOrError:IblEnvironment.kt$IblEnvironment$throw IllegalStateException("$tag link failed: $log")</ID>
+    <ID>UseCheckOrError:PbrPipeline.kt$PbrPipeline$throw IllegalStateException("PBR program link failed: $log")</ID>
+    <ID>UseCheckOrError:PbrPipeline.kt$PbrPipeline$throw IllegalStateException("PBR shader compile failed: $log")</ID>
+    <ID>UseCheckOrError:ShaderUtil.kt$ShaderUtil$throw IllegalStateException("$tag compile failed: $log")</ID>
+    <ID>UseCheckOrError:ShaderUtil.kt$ShaderUtil$throw IllegalStateException("$tag link failed: $log")</ID>
+    <ID>WildcardImport:AppUI.kt$import androidx.compose.foundation.*</ID>
+    <ID>WildcardImport:AppUI.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AppUI.kt$import androidx.compose.foundation.lazy.grid.*</ID>
+    <ID>WildcardImport:AppUI.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:AppUI.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:AvatarState.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

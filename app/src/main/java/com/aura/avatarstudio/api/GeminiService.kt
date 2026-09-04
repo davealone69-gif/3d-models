@@ -28,8 +28,15 @@ data class Content(
 )
 
 @Serializable
+data class InlineData(
+    val mimeType: String,
+    val data: String
+)
+
+@Serializable
 data class Part(
-    val text: String? = null
+    val text: String? = null,
+    val inlineData: InlineData? = null
 )
 
 @Serializable
@@ -89,7 +96,7 @@ object RetrofitClient {
 
 suspend fun generateAvatarConfig(prompt: String): String = withContext(Dispatchers.IO) {
     val apiKey = BuildConfig.GEMINI_API_KEY
-    
+
     // Create JSON schema for structured output to configure avatar parameters
     val schemaJson = """
     {
@@ -122,28 +129,64 @@ suspend fun generateAvatarConfig(prompt: String): String = withContext(Dispatche
         systemInstruction = Content(parts = listOf(Part(text = "You are a Cyberpunk Avatar configurator. The user gives a prompt, and you must output the exact matching indices for their avatar configuration in the requested JSON structure.")))
     )
 
-    try {
-        val response = RetrofitClient.service.generateContent(apiKey, request)
-        response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
-    } catch (e: Exception) {
-        e.printStackTrace()
-        "{}" // fallback to empty json
-    }
+    val response = RetrofitClient.service.generateContent(apiKey, request)
+    response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
 }
 
 suspend fun chatWithAvatar(prompt: String): String = withContext(Dispatchers.IO) {
     val apiKey = BuildConfig.GEMINI_API_KEY
-    
+
     val request = GenerateContentRequest(
         contents = listOf(Content(parts = listOf(Part(text = prompt)))),
         systemInstruction = Content(parts = listOf(Part(text = "You are roleplaying as the user's custom Cyberpunk avatar. Respond in-character, using cyberpunk slang (chombatta, eddies, chrome, netrunner, etc.). Keep responses short, punchy, and immersive.")))
     )
 
-    try {
-        val response = RetrofitClient.service.generateContent(apiKey, request)
-        response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "Connection lost. Neural link severed."
-    } catch (e: Exception) {
-        e.printStackTrace()
-        "Error: Neural static. Retrying connection..."
+    val response = RetrofitClient.service.generateContent(apiKey, request)
+    response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "Connection lost. Neural link severed."
+}
+
+suspend fun generateAvatarConfigWithImage(prompt: String, base64Image: String? = null): String = withContext(Dispatchers.IO) {
+    val apiKey = BuildConfig.GEMINI_API_KEY
+
+    val schemaJson = """
+    {
+      "type": "OBJECT",
+      "properties": {
+        "gender": { "type": "INTEGER", "description": "0=M, 1=F, 2=N, 3=O" },
+        "headShape": { "type": "NUMBER", "description": "Float between 1.0 and 12.0" },
+        "age": { "type": "NUMBER", "description": "Float between 18.0 and 80.0" },
+        "hairStyleIndex": { "type": "INTEGER", "description": "0 to 8" },
+        "clothingIndex": { "type": "INTEGER", "description": "0 to 5" },
+        "eyeShapeIndex": { "type": "INTEGER", "description": "0 to 5" },
+        "augmentsIndex": { "type": "INTEGER", "description": "0 to 3" },
+        "tattoosIndex": { "type": "INTEGER", "description": "0 to 8" }
+      }
     }
+    """.trimIndent()
+    val schemaElement = Json.parseToJsonElement(schemaJson) as JsonObject
+
+    val parts = mutableListOf<Part>()
+    if (prompt.isNotBlank() || base64Image == null) {
+        parts.add(Part(text = if(prompt.isNotBlank()) prompt else "Extract avatar features from this image."))
+    }
+    if (base64Image != null) {
+        parts.add(Part(inlineData = InlineData(mimeType = "image/jpeg", data = base64Image)))
+    }
+
+    val request = GenerateContentRequest(
+        contents = listOf(Content(parts = parts)),
+        generationConfig = GenerationConfig(
+            temperature = 0.5f,
+            responseFormat = ResponseFormat(
+                text = ResponseFormatText(
+                    mimeType = "application/json",
+                    schema = schemaElement
+                )
+            )
+        ),
+        systemInstruction = Content(parts = listOf(Part(text = "You are a Cyberpunk Avatar configurator. Output exact matching indices for the avatar configuration in the requested JSON structure based on the prompt or provided image.")))
+    )
+
+    val response = RetrofitClient.service.generateContent(apiKey, request)
+    response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
 }

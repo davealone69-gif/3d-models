@@ -12,13 +12,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val CyberpunkDarkColorScheme = darkColorScheme(
-    primary = Color(0xFF904EDD), // The requested purple neon accent
+    // The requested purple neon accent
+    primary = Color(0xFF904EDD),
     onPrimary = Color.White,
     primaryContainer = Color(0xFF4A148C),
     secondary = Color(0xFF00F2FE),
-    background = Color(0xFF0A0B10), // Deep space black
-    surface = Color(0xFF13141C), // Dark panels
-    surfaceVariant = Color(0xFF1C1D29), // Lighter panels
+    // Deep space black
+    background = Color(0xFF0A0B10),
+    // Dark panels
+    surface = Color(0xFF13141C),
+    // Lighter panels
+    surfaceVariant = Color(0xFF1C1D29),
     onSurface = Color.White,
     onSurfaceVariant = Color(0xFFA0A0B0),
     outline = Color(0xFF2D2E3A)
@@ -26,7 +30,8 @@ private val CyberpunkDarkColorScheme = darkColorScheme(
 
 @Composable
 fun AvatarStudioTheme(
-    darkTheme: Boolean = true, // Force dark theme for this UI
+    // Force dark theme for this UI
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

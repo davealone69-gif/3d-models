@@ -40,8 +40,8 @@ class HdAvatarRenderer(
     private var aspect = 1f
 
     // ---- exposure / lighting --------------------------------------------
-    var exposure = 1.15f
-    var iblIntensity = 0.9f
+    var exposure = 1.35f
+    var iblIntensity = 1.2f
     var environmentEnabled = true
 
     /** 4 lights, 8 floats each: [px,py,pz,pw, r,g,b,intensity]. */
@@ -138,35 +138,60 @@ class HdAvatarRenderer(
         lightCount = if (enabled) 4 else 3
     }
 
+    fun playAnimation(name: String) {
+        animation?.playAnimation(name)
+    }
+    fun playAnimation(index: Int) {
+        animation?.playAnimation(index)
+    }
+
+    fun playAnimationOld(name: String) {
+        animation?.playAnimation(name)
+    }
+
     fun updateAppearance(skinTone: String, eyeColor: String, hairColor: String, atmosphere: String) {
         val av = avatar ?: return
 
         // 1. Atmosphere (Lighting)
         when (atmosphere) {
+            "Fiery Hellscape" -> {
+                exposure = 1.3f
+                iblIntensity = 0.9f
+                lightColors[0] = floatArrayOf(1.0f, 0.4f, 0.0f) // Bright Orange/Fire
+                lightColors[1] = floatArrayOf(0.8f, 0.1f, 0.0f) // Deep Red/Magma
+                lightColors[2] = floatArrayOf(1.0f, 0.6f, 0.1f) // Yellow sparks
+            }
+            "Neutral Studio" -> {
+                exposure = 1.4f
+                iblIntensity = 1.0f
+                lightColors[0] = floatArrayOf(1.0f, 1.0f, 1.0f) // Key Light
+                lightColors[1] = floatArrayOf(0.8f, 0.8f, 0.9f) // Fill Light
+                lightColors[2] = floatArrayOf(0.9f, 0.9f, 1.0f) // Back Light
+            }
             "Vampire Lair" -> {
-                exposure = 0.8f
-                iblIntensity = 0.4f
+                exposure = 1.0f
+                iblIntensity = 0.6f
                 lightColors[0] = floatArrayOf(0.9f, 0.1f, 0.1f) // Deep Red
                 lightColors[1] = floatArrayOf(0.1f, 0.05f, 0.2f)
                 lightColors[2] = floatArrayOf(0.2f, 0.05f, 0.05f)
             }
             "Blood Red Mist" -> {
-                exposure = 1.0f
-                iblIntensity = 0.6f
+                exposure = 1.2f
+                iblIntensity = 0.8f
                 lightColors[0] = floatArrayOf(1.0f, 0.0f, 0.0f) // Bright Red
                 lightColors[1] = floatArrayOf(0.8f, 0.1f, 0.1f)
                 lightColors[2] = floatArrayOf(0.5f, 0.0f, 0.0f)
             }
             "Dark Studio" -> {
-                exposure = 1.2f
-                iblIntensity = 0.8f
+                exposure = 1.4f
+                iblIntensity = 1.0f
                 lightColors[0] = floatArrayOf(1.00f, 0.92f, 0.80f)
                 lightColors[1] = floatArrayOf(0.55f, 0.65f, 1.00f)
                 lightColors[2] = floatArrayOf(0.70f, 0.80f, 1.00f)
             }
             "Neon Cityscape" -> {
-                exposure = 1.4f
-                iblIntensity = 1.0f
+                exposure = 1.6f
+                iblIntensity = 1.2f
                 lightColors[0] = floatArrayOf(1.0f, 0.0f, 0.8f) // Pink/Magenta
                 lightColors[1] = floatArrayOf(0.0f, 0.8f, 1.0f) // Cyan
                 lightColors[2] = floatArrayOf(0.5f, 0.0f, 1.0f) // Purple

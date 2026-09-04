@@ -22,14 +22,44 @@ class GltfAvatarView(
 
     init {
         setEGLContextClientVersion(3)
-        setEGLConfigChooser(8, 8, 8, 8, 24, 8)
+        setEGLConfigChooser { egl, display ->
+            val attribs = intArrayOf(
+                javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
+                javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
+                javax.microedition.khronos.egl.EGL10.EGL_BLUE_SIZE, 8,
+                javax.microedition.khronos.egl.EGL10.EGL_ALPHA_SIZE, 8,
+                javax.microedition.khronos.egl.EGL10.EGL_DEPTH_SIZE, 24,
+                javax.microedition.khronos.egl.EGL10.EGL_STENCIL_SIZE, 8,
+                javax.microedition.khronos.egl.EGL10.EGL_SAMPLE_BUFFERS, 1,
+                javax.microedition.khronos.egl.EGL10.EGL_SAMPLES, 4,
+                javax.microedition.khronos.egl.EGL10.EGL_NONE
+            )
+            val configs = arrayOfNulls<javax.microedition.khronos.egl.EGLConfig>(1)
+            val numConfigs = IntArray(1)
+            egl.eglChooseConfig(display, attribs, configs, 1, numConfigs)
+            if (numConfigs[0] > 0) {
+                configs[0]
+            } else {
+                val fallbackAttribs = intArrayOf(
+                    javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_BLUE_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_ALPHA_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_DEPTH_SIZE, 24,
+                    javax.microedition.khronos.egl.EGL10.EGL_STENCIL_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_NONE
+                )
+                egl.eglChooseConfig(display, fallbackAttribs, configs, 1, numConfigs)
+                configs[0]
+            }
+        }
         preserveEGLContextOnPause = true
         setRenderer(object : Renderer {
             override fun onSurfaceCreated(gl: javax.microedition.khronos.opengles.GL10?, config: javax.microedition.khronos.egl.EGLConfig?) {
                 renderer.onSurfaceCreated(gl, config)
                 if (!loaded) {
                     loaded = true
-                    // Defer heavy asset loading to avoid blocking the first frame 
+                    // Defer heavy asset loading to avoid blocking the first frame
                     // and causing SurfaceSyncGroup timeouts (1000ms limits)
                     post {
                         queueEvent {
@@ -59,6 +89,17 @@ class GltfAvatarView(
                 renderer.setAvatar(loader.loadFromAssets(assetName))
             }
         }
+    }
+
+    fun playAnimation(name: String) {
+        queueEvent { renderer.playAnimation(name) }
+    }
+    fun playAnimation(index: Int) {
+        queueEvent { renderer.playAnimation(index) }
+    }
+
+    fun playAnimation_old(name: String) {
+        queueEvent { renderer.playAnimation(name) }
     }
 
     fun updateAppearance(

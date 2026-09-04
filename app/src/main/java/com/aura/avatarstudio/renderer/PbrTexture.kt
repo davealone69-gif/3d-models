@@ -107,11 +107,11 @@ class PbrTexture(
 
         val extensions = GLES30.glGetString(GLES30.GL_EXTENSIONS)
         if (extensions != null && extensions.contains("GL_EXT_texture_filter_anisotropic")) {
-            val GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE
-            val GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
+            val glTextureMaxAnisotropyExt = 0x84FE
+            val glMaxTextureMaxAnisotropyExt = 0x84FF
             val maxAnisotropy = FloatArray(1)
-            GLES30.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy, 0)
-            GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy[0])
+            GLES30.glGetFloatv(glMaxTextureMaxAnisotropyExt, maxAnisotropy, 0)
+            GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, glTextureMaxAnisotropyExt, maxAnisotropy[0])
         }
 
         GLES30.glBindTexture(

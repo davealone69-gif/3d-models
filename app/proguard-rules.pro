@@ -1,0 +1,5 @@
+-keep class com.aura.avatarstudio.** { *; }
+-keep class androidx.compose.** { *; }
+-keep class kotlinx.serialization.** { *; }
+-keep class com.squareup.retrofit2.** { *; }
+-keep class com.squareup.okhttp3.** { *; }

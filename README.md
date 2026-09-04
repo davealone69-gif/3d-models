@@ -1,19 +1,10 @@
-# Avatar Studio (Android Rewrite)
+# Avatar Studio
 
-This is an Android rewrite of the Grok Girls Studio application, migrated from a web-based React/Capacitor setup to a fully native Android application using Kotlin and Jetpack Compose.
+## Developer Setup
 
-## Features Preserved
-- **Native 3D Avatar Rendering:** Integrates the original high-performance Kotlin/GLES3 native 3D renderer (`HdAvatarRenderer` / `GltfAvatarView`) into the Jetpack Compose app.
-- **Appearance & Persona Preview:** A dedicated Appearance screen for viewing the 3D model.
-- **Chat Interface:** Basic UI foundation for character interaction.
-- **Gallery Interface:** A dedicated gallery tab.
-- **Modern UI:** Redesigned cleanly with Material Design 3 and a cohesive dark/cyberpunk aesthetic matching the original feel.
+Follow these exact steps to build the release application out of the box:
 
-## Architecture
-- **Language:** Kotlin
-- **UI Framework:** Jetpack Compose
-- **3D Graphics:** Native Android OpenGL ES 3.0 via `GLSurfaceView`
-- **Build System:** Gradle (Kotlin DSL)
-
-## Notes
-- Original React specific files, Capacitor implementations, and WebGL bindings have been removed and replaced by the single-source native Android implementation.
+a. Copy `gradle.properties.example` → `gradle.properties` and fill local values.
+b. Generate keystore with `scripts/generate-keystore.sh`.
+c. `./gradlew :app:assembleRelease :app:bundleRelease`
+d. Verify the APK/AAB is correctly signed using `apksigner verify` or `jarsigner -verify`.

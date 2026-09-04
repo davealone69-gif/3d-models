@@ -15,6 +15,12 @@ class AvatarState {
     var eyeShapeIndex by mutableIntStateOf(-1)
     var augmentsIndex by mutableIntStateOf(-1)
     var tattoosIndex by mutableIntStateOf(-1)
+    var atmosphere by mutableStateOf("Neon Cityscape")
+    var skinTone by mutableStateOf("Fair")
+    var eyeColor by mutableStateOf("Blue")
+    var hairColor by mutableStateOf("Neon Pink")
+    var avatarView: com.aura.avatarstudio.GltfAvatarView? = null
+    var hasPlayedStartupVideo by mutableStateOf(false)
 }
 
 val LocalAvatarState = compositionLocalOf<AvatarState> { error("No AvatarState provided") }

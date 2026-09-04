@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "AvatarStudio"
 include(":app")
+include(":libs")

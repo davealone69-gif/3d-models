@@ -12,12 +12,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import com.aura.avatarstudio.data.AvatarDatabase
+import com.aura.avatarstudio.data.AvatarPreset
+import kotlinx.coroutines.flow.firstOrNull
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
+import android.util.Base64
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,26 +46,26 @@ import kotlinx.serialization.json.floatOrNull
 fun AppUI(modifier: Modifier = Modifier) {
     var topTab by remember { mutableStateOf("BUILDER") }
     val avatarState = remember { AvatarState() }
-    
+
     CompositionLocalProvider(LocalAvatarState provides avatarState) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
-            topBar = { TopHeader(topTab, onTabSelected = { topTab = it }) },
-            bottomBar = { BottomActionPanel() }
+            topBar = { if (avatarState.hasPlayedStartupVideo) TopHeader(topTab, onTabSelected = { topTab = it }) },
+            bottomBar = { if (avatarState.hasPlayedStartupVideo) BottomActionPanel() }
         ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            if (topTab == "BUILDER") {
-                BuilderMode()
-            } else if (topTab == "PRESETS") {
-                PresetsMode()
-            } else if (topTab == "CHAT") {
-                ChatMode()
-            } else if (topTab == "IMPORT") {
-                SettingsScreen()
+            Box(modifier = Modifier.padding(if (avatarState.hasPlayedStartupVideo) innerPadding else PaddingValues(0.dp)).fillMaxSize()) {
+                if (topTab == "BUILDER") {
+                    BuilderMode()
+                } else if (topTab == "PRESETS") {
+                    PresetsMode()
+                } else if (topTab == "CHAT") {
+                    ChatMode()
+                } else if (topTab == "IMPORT") {
+                    SettingsScreen()
+                }
             }
         }
-    }
     }
 }
 
@@ -116,7 +125,7 @@ fun BottomActionPanel() {
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) { Text("LOAD OUTFIT", fontSize = 12.sp) }
-            
+
             Button(
                 onClick = { shareImage(context) },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -130,14 +139,63 @@ fun BuilderMode() {
     var activeCategory by remember { mutableStateOf("APPEARANCE") }
     var aiPrompt by remember { mutableStateOf("") }
     var isGenerating by remember { mutableStateOf(false) }
+    var base64Image by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val state = LocalAvatarState.current
-    
+    val context = LocalContext.current
+
+    var isStartupVideo by remember { mutableStateOf(!state.hasPlayedStartupVideo) }
+    var startupMessage by remember { mutableStateOf("INITIALIZING NEURAL LINK...") }
+
+    LaunchedEffect(isStartupVideo) {
+        if (isStartupVideo) {
+            val atmospheres = listOf("Neon Cityscape", "Vampire Lair", "Fiery Hellscape", "Neutral Studio", "Blood Red Mist")
+            val messages = listOf("CALIBRATING ARMOR...", "SYNCING ATMOSPHERE...", "LOADING NEURO-OPTICS...", "BOOT SEQUENCE COMPLETE")
+            for (i in 0..3) {
+                startupMessage = messages[i]
+                state.atmosphere = atmospheres[i % atmospheres.size]
+                state.clothingIndex = (0..7).random()
+                state.avatarView?.updateAppearance(state.skinTone, state.eyeColor, state.hairColor, state.atmosphere)
+                kotlinx.coroutines.delay(900)
+            }
+            state.atmosphere = "Neutral Studio"
+            state.clothingIndex = 0
+            state.avatarView?.updateAppearance(state.skinTone, state.eyeColor, state.hairColor, state.atmosphere)
+            state.hasPlayedStartupVideo = true
+            isStartupVideo = false
+        }
+    }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes()
+                if (bytes != null) {
+                    base64Image = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        if (!isStartupVideo) {
+            Row(
+                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+            Button(
+                onClick = { launcher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                modifier = Modifier.size(40.dp),
+                contentPadding = PaddingValues(0.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = if (base64Image != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Text(if (base64Image != null) "✓" else "+", fontSize = 16.sp, color = Color.White)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },
@@ -149,11 +207,11 @@ fun BuilderMode() {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { 
+                onClick = {
                     isGenerating = true
                     scope.launch {
-                        val resultJson = com.aura.avatarstudio.api.generateAvatarConfig(aiPrompt)
                         try {
+                            val resultJson = com.aura.avatarstudio.api.generateAvatarConfigWithImage(aiPrompt, base64Image)
                             val config = Json { ignoreUnknownKeys = true }.decodeFromString<JsonObject>(resultJson)
                             config["gender"]?.jsonPrimitive?.intOrNull?.let { state.gender = it }
                             config["headShape"]?.jsonPrimitive?.floatOrNull?.let { state.headShape = it }
@@ -164,35 +222,67 @@ fun BuilderMode() {
                             config["augmentsIndex"]?.jsonPrimitive?.intOrNull?.let { state.augmentsIndex = it }
                             config["tattoosIndex"]?.jsonPrimitive?.intOrNull?.let { state.tattoosIndex = it }
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            com.aura.avatarstudio.util.NetworkErrorHandler.handleError(context, e)
+                        } finally {
+                            isGenerating = false
+                            base64Image = null // reset after generation
                         }
-                        isGenerating = false
                     }
                 },
-                enabled = !isGenerating && aiPrompt.isNotBlank(),
+                enabled = !isGenerating && (aiPrompt.isNotBlank() || base64Image != null),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (isGenerating) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
                 else Text("AUTO-GEN", fontSize = 12.sp)
             }
         }
-        
+        }
+
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             AndroidView(
-                factory = { context -> GltfAvatarView(context, "avatars/my_avatar.glb") },
+                factory = { context -> GltfAvatarView(context, "avatars/my_avatar.glb").also { state.avatarView = it } },
                 modifier = Modifier.fillMaxSize()
             )
-            
+
+            if (isStartupVideo) {
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
+                    Text(startupMessage, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            } else {
+
             Column(
                 modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                listOf("R" to "ROTATE", "Q" to "ZOOM", "+" to "PAN", "D" to "RANDOM").forEach { (icon, label) ->
+                listOf("R" to "ROTATE", "Q" to "ZOOM", "+" to "PAN", "S" to "SAVE").forEach { (icon, label) ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.7f),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable {
+                                    if (label == "SAVE") {
+                                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                            val preset = AvatarPreset(
+                                                name = "Preset \${System.currentTimeMillis() % 1000}",
+                                                gender = state.gender,
+                                                headShape = state.headShape,
+                                                age = state.age,
+                                                hairStyleIndex = state.hairStyleIndex,
+                                                height = state.height,
+                                                build = state.build,
+                                                jaw = state.jaw,
+                                                cheek = state.cheek,
+                                                clothingIndex = state.clothingIndex,
+                                                eyeShapeIndex = state.eyeShapeIndex,
+                                                augmentsIndex = state.augmentsIndex,
+                                                tattoosIndex = state.tattoosIndex
+                                            )
+                                            AvatarDatabase.getDatabase(context).avatarDao().insertPreset(preset)
+                                        }
+                                    }
+                                }
                         ) {
                             Box(contentAlignment = Alignment.Center) { Text(icon, color = Color.White) }
                         }
@@ -200,7 +290,7 @@ fun BuilderMode() {
                     }
                 }
             }
-            
+
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -213,14 +303,16 @@ fun BuilderMode() {
                 }
             }
         }
-        
+        }
+
+        if (!isStartupVideo) {
         Row(modifier = Modifier.fillMaxWidth().weight(1f).background(MaterialTheme.colorScheme.background)) {
             LazyColumn(
                 modifier = Modifier.width(80.dp).fillMaxHeight().background(MaterialTheme.colorScheme.surface),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val categories = listOf(
-                    "APPEARANCE", "BODY", "CLOTHING", "HAIR", "FACE", 
+                    "APPEARANCE", "ATMOSPHERE", "BODY", "CLOTHING", "HAIR", "FACE",
                     "EYES", "ACCESSORIES", "AUGMENTS", "TATTOOS", "ANIMATIONS"
                 )
                 items(categories) { cat ->
@@ -241,10 +333,11 @@ fun BuilderMode() {
                     }
                 }
             }
-            
+
             Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(12.dp)) {
                 when(activeCategory) {
                     "APPEARANCE" -> AppearancePanel()
+                    "ATMOSPHERE" -> AtmospherePanel()
                     "HAIR" -> HairPanel()
                     "BODY" -> BodyPanel()
                     "CLOTHING" -> ClothingPanel()
@@ -258,13 +351,14 @@ fun BuilderMode() {
                 }
             }
         }
+        }
     }
 }
 
 @Composable
 fun AppearancePanel() {
     val state = LocalAvatarState.current
-    
+
     LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("GENDER", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -315,8 +409,8 @@ fun HairPanel() {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf("STYLE", "COLOR", "FACIAL", "EYEBROWS").forEach { tab ->
                 Text(
-                    tab, 
-                    fontSize = 10.sp, 
+                    tab,
+                    fontSize = 10.sp,
                     color = if(subTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable { subTab = tab }.padding(bottom=8.dp)
@@ -343,6 +437,31 @@ fun HairPanel() {
 }
 
 @Composable
+fun AtmospherePanel() {
+    val state = LocalAvatarState.current
+    val atmospheres = listOf("Neon Cityscape", "Dark Studio", "Blood Red Mist", "Vampire Lair", "Fiery Hellscape", "Neutral Studio")
+
+    LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(atmospheres) { item ->
+            val isSelected = state.atmosphere == item
+            Box(
+                modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                .clickable {
+                    state.atmosphere = item
+                    state.avatarView?.updateAppearance(
+                        state.skinTone, state.eyeColor, state.hairColor, state.atmosphere
+                    )
+                },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(item, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+    }
+}
+
+@Composable
 fun BodyPanel() {
     val state = LocalAvatarState.current
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -357,7 +476,10 @@ fun BodyPanel() {
 @Composable
 fun ClothingPanel() {
     val state = LocalAvatarState.current
-    val clothingItems = listOf("Nomad Jacket", "Corpo Suit", "Streetwear Hoodie", "Tactical Vest", "Netrunner Suit", "Casual Tee")
+    val clothingItems = listOf(
+        "Nomad Jacket", "Corpo Suit", "Streetwear Hoodie", "Tactical Vest", "Netrunner Suit", "Casual Tee",
+        "Demonic Knight Armor", "Medieval Leather Armor"
+    )
     LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         itemsIndexed(clothingItems) { index, item ->
             val isSelected = state.clothingIndex == index
@@ -398,7 +520,7 @@ fun EyesPanel() {
         Text("EYE SHAPE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val eyeShapes = listOf("Natural", "Cyber-Optic", "Feline", "Synthetic", "Wide", "Narrow")
         LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top=8.dp)) {
-            itemsIndexed(eyeShapes) { index, shape -> 
+            itemsIndexed(eyeShapes) { index, shape ->
                 val isSelected = state.eyeShapeIndex == index
                 Box(
                     modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
@@ -417,7 +539,7 @@ fun EyesPanel() {
 fun AccessoriesPanel() {
     val accessories = listOf("Aviators", "Respirator", "Holo-Visor", "Ear Cuff", "Goggles", "Choker", "Neural Link", "Bandana", "Cyber-Patch")
     LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(accessories) { acc -> 
+        items(accessories) { acc ->
             Box(modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                 Text(acc, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
@@ -432,7 +554,7 @@ fun AugmentsPanel() {
         Text("CYBERWARE & IMPLANTS", fontSize = 12.sp, color = Color.White)
         val augments = listOf("Mantis Blades", "Gorilla Arms", "Subdermal Armor", "Optic Scanner")
         LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            itemsIndexed(augments) { index, aug -> 
+            itemsIndexed(augments) { index, aug ->
                 val isSelected = state.augmentsIndex == index
                 Box(
                     modifier = Modifier.aspectRatio(1.5f).clip(RoundedCornerShape(8.dp))
@@ -454,7 +576,7 @@ fun TattoosPanel() {
     Spacer(Modifier.height(8.dp))
     val tattoos = listOf("Barcode", "Circuitry", "Yakuza Dragon", "Neon Lotus", "Tribal", "Hex Pattern", "Cyber-Skull", "Kanji", "Geometric")
     LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        itemsIndexed(tattoos) { index, tattoo -> 
+        itemsIndexed(tattoos) { index, tattoo ->
             val isSelected = state.tattoosIndex == index
             Box(
                 modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
@@ -470,9 +592,14 @@ fun TattoosPanel() {
 
 @Composable
 fun AnimationsPanel() {
+    val state = LocalAvatarState.current
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        listOf("IDLE NEUTRAL", "COMBAT READY", "RELAXED", "WALK CYCLE").forEach { anim ->
-            Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        listOf("IDLE NEUTRAL", "COMBAT READY", "RELAXED", "WALK CYCLE").forEachIndexed { index, anim ->
+            Button(
+                onClick = { state.avatarView?.playAnimation(index) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 Text(anim)
             }
         }
@@ -481,22 +608,54 @@ fun AnimationsPanel() {
 
 @Composable
 fun PresetsMode() {
+    val context = LocalContext.current
+    val dao = remember { AvatarDatabase.getDatabase(context).avatarDao() }
+    val presets by dao.getAllPresets().collectAsState(initial = emptyList())
+    val state = LocalAvatarState.current
+    val scope = rememberCoroutineScope()
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("PRESETS", style = MaterialTheme.typography.titleLarge, color = Color.White)
         Spacer(modifier = Modifier.height(16.dp))
-        val presets = listOf("Street Samurai", "Netrunner", "Corporate Shark", "Wasteland Nomad", "Tech Assassin", "Cyber-Doc")
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(presets) { presetName ->
-                Card(
-                    modifier = Modifier.aspectRatio(0.7f),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(presetName, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        if (presets.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No saved presets. Save one in the Builder!", color = Color.Gray)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(presets) { preset ->
+                    Card(
+                        modifier = Modifier
+                            .aspectRatio(0.7f)
+                            .clickable {
+                                state.gender = preset.gender
+                                state.headShape = preset.headShape
+                                state.age = preset.age
+                                state.hairStyleIndex = preset.hairStyleIndex
+                                state.height = preset.height
+                                state.build = preset.build
+                                state.jaw = preset.jaw
+                                state.cheek = preset.cheek
+                                state.clothingIndex = preset.clothingIndex
+                                state.eyeShapeIndex = preset.eyeShapeIndex
+                                state.augmentsIndex = preset.augmentsIndex
+                                state.tattoosIndex = preset.tattoosIndex
+                            },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Text(preset.name, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.align(Alignment.Center))
+                            IconButton(
+                                onClick = { scope.launch(kotlinx.coroutines.Dispatchers.IO) { dao.deletePreset(preset.id) } },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Text("X", color = Color.Red)
+                            }
+                        }
                     }
                 }
             }
@@ -506,19 +665,19 @@ fun PresetsMode() {
 
 @Composable
 fun SettingsScreen() {
-    var highQuality by remember { mutableStateOf(false) }
+    val highQuality by remember { mutableStateOf(true) }
     var cacheClearedMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
-    
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("SYSTEM CONFIGURATION", style = MaterialTheme.typography.headlineMedium, color = Color.White)
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("High Quality Rendering", color = Color.White)
-                    Text("Enables full PBR pipelines and 2K textures.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text("Photorealistic High Quality Rendering", color = Color.White)
+                    Text("Enables full PBR pipelines, MSAA, and 2K textures.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
-                Switch(checked = highQuality, onCheckedChange = { highQuality = it })
+                Switch(checked = highQuality, onCheckedChange = { }, enabled = false)
             }
         }
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -565,6 +724,7 @@ fun shareImage(context: Context) {
 
 @Composable
 fun ChatMode() {
+    val context = LocalContext.current
     var messages by remember { mutableStateOf(listOf(Pair("Avatar", "Neural link established. What's the job, chombatta?"))) }
     var input by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
@@ -574,7 +734,7 @@ fun ChatMode() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("NEURAL CHAT", style = MaterialTheme.typography.titleLarge, color = Color.White)
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Column(
             modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -598,7 +758,7 @@ fun ChatMode() {
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
@@ -618,9 +778,14 @@ fun ChatMode() {
                         messages = messages + Pair("You", prompt)
                         isSending = true
                         scope.launch {
-                            val reply = com.aura.avatarstudio.api.chatWithAvatar(prompt)
-                            messages = messages + Pair("Avatar", reply)
-                            isSending = false
+                            try {
+                                val reply = com.aura.avatarstudio.api.chatWithAvatar(prompt)
+                                messages = messages + Pair("Avatar", reply)
+                            } catch (e: Exception) {
+                                com.aura.avatarstudio.util.NetworkErrorHandler.handleError(context, e)
+                            } finally {
+                                isSending = false
+                            }
                         }
                     }
                 },

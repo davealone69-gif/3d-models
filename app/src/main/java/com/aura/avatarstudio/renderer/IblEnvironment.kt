@@ -311,13 +311,14 @@ object IblEnvironment {
             verts[v++] = x; verts[v++] = y; verts[v++] = z
         }
         // 6 faces, 2 triangles each, outward normals (position == direction)
+        // -Z, +Z, +Y, -Y, +X, -X
         val faces = arrayOf(
-            floatArrayOf(-1f, -1f, -1f,  1f, -1f, -1f,  1f,  1f, -1f,  -1f, -1f, -1f,  1f,  1f, -1f, -1f,  1f, -1f), // -Z
-            floatArrayOf(-1f, -1f,  1f, -1f,  1f,  1f,  1f,  1f,  1f,  -1f, -1f,  1f,  1f,  1f,  1f,  1f, -1f,  1f), // +Z
-            floatArrayOf(-1f,  1f, -1f, -1f,  1f,  1f,  1f,  1f,  1f,  -1f,  1f, -1f,  1f,  1f,  1f,  1f,  1f, -1f), // +Y
-            floatArrayOf(-1f, -1f, -1f,  1f, -1f, -1f,  1f, -1f,  1f,  -1f, -1f, -1f,  1f, -1f,  1f, -1f, -1f,  1f), // -Y
-            floatArrayOf( 1f, -1f, -1f,  1f,  1f, -1f,  1f,  1f,  1f,   1f, -1f, -1f,  1f,  1f,  1f,  1f, -1f,  1f), // +X
-            floatArrayOf(-1f, -1f, -1f, -1f, -1f,  1f, -1f,  1f,  1f,  -1f, -1f, -1f, -1f,  1f,  1f, -1f,  1f, -1f)  // -X
+            floatArrayOf(-1f, -1f, -1f,  1f, -1f, -1f,  1f,  1f, -1f,  -1f, -1f, -1f,  1f,  1f, -1f, -1f,  1f, -1f),
+            floatArrayOf(-1f, -1f,  1f, -1f,  1f,  1f,  1f,  1f,  1f,  -1f, -1f,  1f,  1f,  1f,  1f,  1f, -1f,  1f),
+            floatArrayOf(-1f,  1f, -1f, -1f,  1f,  1f,  1f,  1f,  1f,  -1f,  1f, -1f,  1f,  1f,  1f,  1f,  1f, -1f),
+            floatArrayOf(-1f, -1f, -1f,  1f, -1f, -1f,  1f, -1f,  1f,  -1f, -1f, -1f,  1f, -1f,  1f, -1f, -1f,  1f),
+            floatArrayOf( 1f, -1f, -1f,  1f,  1f, -1f,  1f,  1f,  1f,   1f, -1f, -1f,  1f,  1f,  1f,  1f, -1f,  1f),
+            floatArrayOf(-1f, -1f, -1f, -1f, -1f,  1f, -1f,  1f,  1f,  -1f, -1f, -1f, -1f,  1f,  1f, -1f,  1f, -1f)
         )
         for (face in faces) {
             for (i in face.indices step 3) push(face[i], face[i + 1], face[i + 2])
