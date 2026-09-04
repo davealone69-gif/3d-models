@@ -6,14 +6,16 @@ import android.view.MotionEvent
 import com.aura.avatarstudio.renderer.GltfAvatarLoader
 import com.aura.avatarstudio.renderer.HdAvatarRenderer
 
-/** Touch-wired GL view for the HD avatar renderer. */
+/** Touch-wired GL view with deterministic asynchronous avatar loading. */
 class GltfAvatarView(
     private val context: Context,
-    private val assetName: String
+    private val assetName: String,
+    private val onAvatarLoadStateChanged: ((ready: Boolean, error: String?) -> Unit)? = null
 ) : GLSurfaceView(context) {
 
     private val renderer = HdAvatarRenderer(context)
-    private var loaded = false
+    @Volatile private var loadStarted = false
+    @Volatile private var surfaceReady = false
 
     init {
         setEGLContextClientVersion(3)
@@ -35,12 +37,12 @@ class GltfAvatarView(
             if (numConfigs[0] > 0) configs[0] else {
                 val fallback = intArrayOf(
                     javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_BLUE_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_ALPHA_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_DEPTH_SIZE, 24,
-                    javax.microedition.khronos.egl.EGL10.EGL_STENCIL_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_NONE
+                    javax.microedition.khronos.egl.EGL_GREEN_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL_BLUE_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL_ALPHA_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL_DEPTH_SIZE, 24,
+                    javax.microedition.khronos.egl.EGL_STENCIL_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL_NONE
                 )
                 egl.eglChooseConfig(display, fallback, configs, 1, numConfigs)
                 configs[0]
@@ -53,15 +55,10 @@ class GltfAvatarView(
                 config: javax.microedition.khronos.egl.EGLConfig?
             ) {
                 renderer.onSurfaceCreated(gl, config)
-                if (!loaded) {
-                    loaded = true
-                    post {
-                        queueEvent {
-                            val loader = GltfAvatarLoader(context)
-                            renderer.setAvatar(loader.loadFromAssets(assetName))
-                        }
-                    }
-                }
+                surfaceReady = true
+                loadStarted = false
+                notifyState(false, null)
+                startAvatarLoad()
             }
 
             override fun onSurfaceChanged(
@@ -75,12 +72,41 @@ class GltfAvatarView(
         renderMode = RENDERMODE_CONTINUOUSLY
     }
 
-    fun reloadAvatar() {
-        post {
+    private fun notifyState(ready: Boolean, error: String?) {
+        post { onAvatarLoadStateChanged?.invoke(ready, error) }
+    }
+
+    private fun startAvatarLoad() {
+        if (!surfaceReady || loadStarted) return
+        loadStarted = true
+        notifyState(false, null)
+        Thread {
+            val result = runCatching { GltfAvatarLoader(context).loadFromAssets(assetName) }
             queueEvent {
-                val loader = GltfAvatarLoader(context)
-                renderer.setAvatar(loader.loadFromAssets(assetName))
+                result.fold(
+                    onSuccess = { avatar ->
+                        runCatching { renderer.setAvatar(avatar) }
+                            .onSuccess { notifyState(true, null) }
+                            .onFailure { error ->
+                                loadStarted = false
+                                notifyState(false, error.message ?: error.javaClass.simpleName)
+                            }
+                    },
+                    onFailure = { error ->
+                        loadStarted = false
+                        notifyState(false, error.message ?: error.javaClass.simpleName)
+                    }
+                )
             }
+        }.apply { name = "AvatarLoader" }.start()
+    }
+
+    fun reloadAvatar() {
+        loadStarted = false
+        notifyState(false, null)
+        queueEvent {
+            renderer.clearAvatar()
+            startAvatarLoad()
         }
     }
 
@@ -118,10 +144,10 @@ class GltfAvatarView(
                     val dx = event.getX(0) - event.getX(1)
                     val dy = event.getY(0) - event.getY(1)
                     val distance = kotlin.math.sqrt(dx * dx + dy * dy)
-                    if (baseDistance > 0f && distance > 0f) renderer.zoomCamera(distance / baseDistance)
+                    if (baseDistance > 0f && distance > 0f) zoomCamera(distance / baseDistance)
                     baseDistance = distance
                 } else {
-                    renderer.rotateCamera(event.x - lastX, event.y - lastY)
+                    rotateCamera(event.x - lastX, event.y - lastY)
                     lastX = event.x
                     lastY = event.y
                 }
