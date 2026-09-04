@@ -16,11 +16,7 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 @Serializable
-data class GenerateContentRequest(
-    val contents: List<Content>,
-    val generationConfig: GenerationConfig? = null,
-    val systemInstruction: Content? = null
-)
+data class GenerateContentRequest(val contents: List<Content>, val generationConfig: GenerationConfig? = null, val systemInstruction: Content? = null)
 
 @Serializable
 data class Content(val parts: List<Part>)
@@ -32,10 +28,7 @@ data class InlineData(val mimeType: String, val data: String)
 data class Part(val text: String? = null, val inlineData: InlineData? = null)
 
 @Serializable
-data class GenerationConfig(
-    val responseFormat: ResponseFormat? = null,
-    val temperature: Float? = null
-)
+data class GenerationConfig(val responseFormat: ResponseFormat? = null, val temperature: Float? = null)
 
 @Serializable
 data class ResponseFormat(val text: ResponseFormatText? = null)
@@ -51,10 +44,7 @@ data class Candidate(val content: Content)
 
 interface GeminiApiService {
     @POST("v1beta/models/gemini-3.5-flash:generateContent")
-    suspend fun generateContent(
-        @Query("key") apiKey: String,
-        @Body request: GenerateContentRequest
-    ): GenerateContentResponse
+    suspend fun generateContent(@Query("key") apiKey: String, @Body request: GenerateContentRequest): GenerateContentResponse
 }
 
 object RetrofitClient {
@@ -91,49 +81,40 @@ private val avatarSchema = Json.parseToJsonElement(
     """.trimIndent()
 ) as JsonObject
 
-private fun configRequest(parts: List<Part>) = GenerateContentRequest(
+private fun configRequest(parts: List<Part>): GenerateContentRequest = GenerateContentRequest(
     contents = listOf(Content(parts)),
     generationConfig = GenerationConfig(
         temperature = 0.5f,
-        responseFormat = ResponseFormat(
-            text = ResponseFormatText("application/json", avatarSchema)
-        )
+        responseFormat = ResponseFormat(ResponseFormatText("application/json", avatarSchema))
     ),
     systemInstruction = Content(listOf(Part(text = "You are a Cyberpunk Avatar configurator. Output exact matching indices for the avatar configuration in the requested JSON structure based on the prompt or provided image.")))
 )
 
 suspend fun generateAvatarConfig(prompt: String): String = withContext(Dispatchers.IO) {
-    val response = RetrofitClient.service.generateContent(
-        BuildConfig.GEMINI_API_KEY,
-        configRequest(listOf(Part(text = prompt)))
-    )
+    val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, configRequest(listOf(Part(text = prompt))))
     response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
 }
 
 suspend fun chatWithAvatar(prompt: String): String = withContext(Dispatchers.IO) {
     val request = GenerateContentRequest(
         contents = listOf(Content(listOf(Part(text = prompt)))),
-        systemInstruction = Content(listOf(Part(text = "You are roleplaying as the user's custom Cyberpunk avatar. Respond in-character, using cyberpunk slang (chombatta, eddies, chrome, netrunner, etc.). Keep responses short, punchy, and immersive.")))
+        systemInstruction = Content(listOf(Part(text = "You are roleplaying as the user's custom Cyberpunk avatar. Respond in-character, using cyberpunk slang. Keep responses short, punchy, and immersive.")))
+    )
     val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, request)
     response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "Connection lost. Neural link severed."
 }
 
-/** Gemini config generation now also launches a real Meshy 3D GLB generation job. */
 suspend fun generateAvatarConfigWithImage(prompt: String, base64Image: String? = null): String = withContext(Dispatchers.IO) {
     val parts = buildList {
         if (prompt.isNotBlank() || base64Image == null) {
             add(Part(text = prompt.ifBlank { "Extract avatar features from this image." }))
         }
-        if (base64Image != null) {
+        if (!base64Image.isNullOrBlank()) {
             add(Part(inlineData = InlineData("image/jpeg", base64Image)))
         }
     }
-    val response = RetrofitClient.service.generateContent(
-        BuildConfig.GEMINI_API_KEY,
-        configRequest(parts)
-    )
+    val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, configRequest(parts))
     val result = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
-
     runCatching {
         MeshyService.generateAndPublish(
             prompt = prompt.ifBlank { "high-detail cyberpunk humanoid avatar, neutral A-pose" },
