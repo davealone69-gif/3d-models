@@ -3,8 +3,10 @@ package com.aura.avatarstudio
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
+import com.aura.avatarstudio.api.GeneratedAvatarStore
 import com.aura.avatarstudio.renderer.GltfAvatarLoader
 import com.aura.avatarstudio.renderer.HdAvatarRenderer
+import java.io.File
 
 /** Touch-wired GL view with deterministic asynchronous avatar loading. */
 class GltfAvatarView(
@@ -18,6 +20,7 @@ class GltfAvatarView(
     @Volatile private var surfaceReady = false
 
     init {
+        GeneratedAvatarStore.initialize(context)
         setEGLContextClientVersion(3)
         setEGLConfigChooser { egl, display ->
             val attribs = intArrayOf(
@@ -37,7 +40,7 @@ class GltfAvatarView(
             if (numConfigs[0] > 0) configs[0] else {
                 val fallback = intArrayOf(
                     javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL_GREEN_SIZE, 8,
+                    javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
                     javax.microedition.khronos.egl.EGL_BLUE_SIZE, 8,
                     javax.microedition.khronos.egl.EGL_ALPHA_SIZE, 8,
                     javax.microedition.khronos.egl.EGL_DEPTH_SIZE, 24,
@@ -101,6 +104,26 @@ class GltfAvatarView(
         }.apply { name = "AvatarLoader" }.start()
     }
 
+    private fun loadGeneratedAvatar(file: File) {
+        if (!surfaceReady) return
+        notifyState(false, null)
+        Thread {
+            val result = runCatching {
+                GltfAvatarLoader(context).loadGlb(file.readBytes())
+            }
+            queueEvent {
+                result.fold(
+                    onSuccess = { avatar ->
+                        runCatching { renderer.setAvatar(avatar) }
+                            .onSuccess { notifyState(true, null) }
+                            .onFailure { error -> notifyState(false, error.message ?: error.javaClass.simpleName) }
+                    },
+                    onFailure = { error -> notifyState(false, error.message ?: error.javaClass.simpleName) }
+                )
+            }
+        }.apply { name = "GeneratedAvatarLoader" }.start()
+    }
+
     fun reloadAvatar() {
         loadStarted = false
         notifyState(false, null)
@@ -115,6 +138,7 @@ class GltfAvatarView(
     fun playAnimation_old(name: String) = queueEvent { renderer.playAnimation(name) }
 
     fun updateAppearance(skinTone: String, eyeColor: String, hairColor: String, atmosphere: String) {
+        GeneratedAvatarStore.consumeNew()?.let { loadGeneratedAvatar(it) }
         queueEvent { renderer.updateAppearance(skinTone, eyeColor, hairColor, atmosphere) }
     }
 
