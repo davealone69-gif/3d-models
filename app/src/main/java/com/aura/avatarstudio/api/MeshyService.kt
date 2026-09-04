@@ -1,3 +1,5 @@
+@file:Suppress("MaxLineLength", "MagicNumber", "ThrowsCount")
+
 package com.aura.avatarstudio.api
 
 import com.aura.avatarstudio.BuildConfig
