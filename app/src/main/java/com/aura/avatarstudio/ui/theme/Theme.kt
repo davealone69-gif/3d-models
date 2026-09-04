@@ -11,38 +11,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF904EDD),
-    secondary = Color(0xFFE62040),
-    tertiary = Color(0xFF00F2FE),
-    background = Color(0xFF07070D),
-    surface = Color(0xFF11111D)
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF904EDD),
-    secondary = Color(0xFFE62040),
-    tertiary = Color(0xFF00F2FE)
+private val CyberpunkDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF904EDD), // The requested purple neon accent
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF4A148C),
+    secondary = Color(0xFF00F2FE),
+    background = Color(0xFF0A0B10), // Deep space black
+    surface = Color(0xFF13141C), // Dark panels
+    surfaceVariant = Color(0xFF1C1D29), // Lighter panels
+    onSurface = Color.White,
+    onSurfaceVariant = Color(0xFFA0A0B0),
+    outline = Color(0xFF2D2E3A)
 )
 
 @Composable
 fun AvatarStudioTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Keep it false to use our cyberpunk theme
+    darkTheme: Boolean = true, // Force dark theme for this UI
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> DarkColorScheme // Force dark theme for cyberpunk feel
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = CyberpunkDarkColorScheme,
         content = content
     )
 }

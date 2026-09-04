@@ -1,295 +1,635 @@
 package com.aura.avatarstudio.ui
 
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.FileProvider
 import com.aura.avatarstudio.GltfAvatarView
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material.icons.Icons
+import java.io.File
+import java.io.FileOutputStream
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.floatOrNull
 
 @Composable
 fun AppUI(modifier: Modifier = Modifier) {
-    var selectedTab by remember { mutableStateOf(0) }
-    var isPhotoMode by remember { mutableStateOf(false) }
+    var topTab by remember { mutableStateOf("BUILDER") }
+    val avatarState = remember { AvatarState() }
     
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = {
-            if (!isPhotoMode) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        icon = { Text("👤") },
-                        label = { Text("Appearance") }
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        icon = { Text("💬") },
-                        label = { Text("Chat") }
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        icon = { Text("🖼") },
-                        label = { Text("Gallery") }
-                    )
-                }
+    CompositionLocalProvider(LocalAvatarState provides avatarState) {
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = { TopHeader(topTab, onTabSelected = { topTab = it }) },
+            bottomBar = { BottomActionPanel() }
+        ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            if (topTab == "BUILDER") {
+                BuilderMode()
+            } else if (topTab == "PRESETS") {
+                PresetsMode()
+            } else if (topTab == "CHAT") {
+                ChatMode()
+            } else if (topTab == "IMPORT") {
+                SettingsScreen()
             }
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(if (isPhotoMode) PaddingValues(0.dp) else innerPadding).fillMaxSize()) {
-            when (selectedTab) {
-                0 -> AppearanceScreen(isPhotoMode = isPhotoMode, onTogglePhotoMode = { isPhotoMode = !isPhotoMode })
-                1 -> ChatScreen()
-                2 -> GalleryScreen()
-            }
-        }
+    }
     }
 }
 
 @Composable
-fun AppearanceScreen(isPhotoMode: Boolean = false, onTogglePhotoMode: () -> Unit = {}) {
-    var selectedCategory by remember { mutableStateOf("Outfits") }
-    var selectedOutfit by remember { mutableStateOf("Default") }
-    var selectedBodyType by remember { mutableStateOf("Average") }
-    var selectedBreastSize by remember { mutableStateOf("Average") }
-    var selectedButtSize by remember { mutableStateOf("Average") }
-    var selectedEthnicity by remember { mutableStateOf("White") }
-    var selectedSkinTone by remember { mutableStateOf("Fair") }
-    var selectedAndroid by remember { mutableStateOf("None") }
-    var selectedHairStyle by remember { mutableStateOf("Long Wavy") }
-    var selectedHairColor by remember { mutableStateOf("Obsidian Black") }
-    var selectedEyeColor by remember { mutableStateOf("Ice Blue") }
-    var selectedMakeup by remember { mutableStateOf("Natural") }
-    var selectedAccessories by remember { mutableStateOf("None") }
-    var selectedPose by remember { mutableStateOf("Neutral Stand") }
-    var selectedAtmosphere by remember { mutableStateOf("Dark Studio") }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { context ->
-                GltfAvatarView(context, "avatars/my_avatar.glb")
-            },
-            update = { view ->
-                view.updateAppearance(
-                    skinTone = selectedSkinTone,
-                    eyeColor = selectedEyeColor,
-                    hairColor = selectedHairColor,
-                    atmosphere = selectedAtmosphere
-                )
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        if (!isPhotoMode) {
-            // Photo Mode Toggle Button
-            SmallFloatingActionButton(
-                onClick = onTogglePhotoMode,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-            ) {
-                Text("📷")
-            }
-
-            // Customization Overlay
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                // Category Tabs
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val categories = listOf(
-                    "Ethnicity", "Skin Tone", "Body Type", "Breast Size", "Butt Size",
-                    "Hair Style", "Hair Color", "Outfits", "Android", 
-                    "Eye Color", "Makeup", "Accessories", "Poses", "Atmosphere"
-                )
-                items(categories) { category ->
-                    val isSelected = selectedCategory == category
-                    Button(
-                        onClick = { selectedCategory = category },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Text(category)
-                    }
-                }
-            }
-
-            // Options Panel
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                tonalElevation = 4.dp
-            ) {
-                LazyRow(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    val options = when (selectedCategory) {
-                        "Ethnicity" -> listOf("White", "Asian", "Black", "Latina", "South Asian", "Middle Eastern")
-                        "Skin Tone" -> listOf("Pale/Vampiric", "Fair", "Tan", "Olive", "Brown", "Ebony")
-                        "Body Type" -> listOf("Slim", "Athletic", "Average", "Curvy", "BBW")
-                        "Breast Size" -> listOf("Flat", "Small", "Average", "Big", "Huge")
-                        "Butt Size" -> listOf("Small", "Slim", "Athletic", "Big", "Huge")
-                        "Hair Style" -> listOf("Straight", "Bangs", "Braids", "Curly", "Bun", "Ponytail", "Bob", "Bald", "Long Wavy", "Pixie Cut")
-                        "Hair Color" -> listOf("Brown", "Black", "Blonde", "Orange", "Pink", "Red", "Blue", "Crimson Red")
-                        "Outfits" -> listOf("Leather & Chains", "Crimson Demon", "Midnight Lace", "Classic Bikini", "Mecha Suit", "Cyberpunk Streetwear", "Gothic Lolita", "Sci-Fi Armor", "Casual Wear", "Business Suit", "Latex Bodysuit", "Steampunk Gear", "Red Lace Lingerie", "Vampire Corset")
-                        "Android" -> listOf("None", "Chrome Panels", "Exposed Cybernetics", "Glowing Optics", "Carbon Fiber Joints", "Matte White Syntheti-Skin", "Battle-Damaged Metal", "Holographic Glitch", "Liquid Metal")
-                        "Eye Color" -> listOf("Ice Blue", "Emerald Green", "Hazel", "Deep Brown", "Glowing Red", "Cyber Purple", "Gold", "Whiteout", "Vampire Silver")
-                        "Makeup" -> listOf("Natural", "Smokey Eye", "Gothic Black", "Cyberpunk Neon", "Geisha", "Tribal Paint", "No Makeup", "Blood Drip", "Vampire Bite")
-                        "Accessories" -> listOf("None", "Choker", "Red Velvet Choker", "Cyber-Goggles", "Horns", "Halo", "Elf Ears", "Piercings", "Mech Wings", "Fangs")
-                        "Poses" -> listOf("Neutral Stand", "Combat Ready", "Relaxed Seated", "Fashion Pose", "Floating/Zero-G", "Crouching", "Seductive Recline")
-                        "Atmosphere" -> listOf("Dark Studio", "Crimson Glow", "Dramatic Shadows", "Flat Light", "Neon Cityscape", "Sci-Fi Corridor", "Ethereal Fog", "Volcanic Ash", "Underwater Caustic", "Vampire Lair", "Blood Red Mist")
-                        else -> emptyList()
-                    }
-
-                    items(options) { option ->
-                        val isOptionSelected = when (selectedCategory) {
-                            "Ethnicity" -> selectedEthnicity == option
-                            "Skin Tone" -> selectedSkinTone == option
-                            "Body Type" -> selectedBodyType == option
-                            "Breast Size" -> selectedBreastSize == option
-                            "Butt Size" -> selectedButtSize == option
-                            "Hair Style" -> selectedHairStyle == option
-                            "Hair Color" -> selectedHairColor == option
-                            "Outfits" -> selectedOutfit == option
-                            "Android" -> selectedAndroid == option
-                            "Eye Color" -> selectedEyeColor == option
-                            "Makeup" -> selectedMakeup == option
-                            "Accessories" -> selectedAccessories == option
-                            "Poses" -> selectedPose == option
-                            "Atmosphere" -> selectedAtmosphere == option
-                            else -> false
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                when (selectedCategory) {
-                                    "Ethnicity" -> selectedEthnicity = option
-                                    "Skin Tone" -> selectedSkinTone = option
-                                    "Body Type" -> selectedBodyType = option
-                                    "Breast Size" -> selectedBreastSize = option
-                                    "Butt Size" -> selectedButtSize = option
-                                    "Hair Style" -> selectedHairStyle = option
-                                    "Hair Color" -> selectedHairColor = option
-                                    "Outfits" -> selectedOutfit = option
-                                    "Android" -> selectedAndroid = option
-                                    "Eye Color" -> selectedEyeColor = option
-                                    "Makeup" -> selectedMakeup = option
-                                    "Accessories" -> selectedAccessories = option
-                                    "Poses" -> selectedPose = option
-                                    "Atmosphere" -> selectedAtmosphere = option
-                                }
-                            },
-                            border = BorderStroke(
-                                1.dp,
-                                if (isOptionSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                            )
-                        ) {
-                            Text(
-                                text = option,
-                                color = if (isOptionSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        // Exit Photo Mode Button
-        SmallFloatingActionButton(
-            onClick = onTogglePhotoMode,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ) {
-            Text("✕")
-        }
-    }
-}
-}
-
-@Composable
-fun ChatScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+fun TopHeader(selected: String, onTabSelected: (String) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(60.dp).background(MaterialTheme.colorScheme.surface),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Chat with Grok Girls", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        var messages by remember { mutableStateOf(listOf("Hello! I'm your avatar. How can I help you today?")) }
-        var currentInput by remember { mutableStateOf("") }
-        
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text("AVATAR DESIGN", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("CREATE YOUR IDENTITY", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Row(
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            items(messages) { message ->
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = MaterialTheme.shapes.medium
+            listOf("BUILDER", "PRESETS", "CHAT", "IMPORT").forEach { tab ->
+                val isSelected = selected == tab
+                Box(
+                    modifier = Modifier
+                        .clickable { onTabSelected(tab) }
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = message,
-                        modifier = Modifier.padding(12.dp)
+                        tab,
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
-        
+        Spacer(modifier = Modifier.width(16.dp))
+    }
+}
+
+@Composable
+fun BottomActionPanel() {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text("AVATAR ID", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("MATRIX_07_8X9A", fontSize = 12.sp, color = Color.White, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                onClick = {},
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) { Text("LOAD OUTFIT", fontSize = 12.sp) }
+            
+            Button(
+                onClick = { shareImage(context) },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) { Text("SAVE AVATAR", fontSize = 12.sp) }
+        }
+    }
+}
+
+@Composable
+fun BuilderMode() {
+    var activeCategory by remember { mutableStateOf("APPEARANCE") }
+    var aiPrompt by remember { mutableStateOf("") }
+    var isGenerating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val state = LocalAvatarState.current
+    
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = currentInput,
-                onValueChange = { currentInput = it },
+                value = aiPrompt,
+                onValueChange = { aiPrompt = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") }
+                placeholder = { Text("e.g. Corporate Netrunner...", fontSize = 12.sp) },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = { 
+                    isGenerating = true
+                    scope.launch {
+                        val resultJson = com.aura.avatarstudio.api.generateAvatarConfig(aiPrompt)
+                        try {
+                            val config = Json { ignoreUnknownKeys = true }.decodeFromString<JsonObject>(resultJson)
+                            config["gender"]?.jsonPrimitive?.intOrNull?.let { state.gender = it }
+                            config["headShape"]?.jsonPrimitive?.floatOrNull?.let { state.headShape = it }
+                            config["age"]?.jsonPrimitive?.floatOrNull?.let { state.age = it }
+                            config["hairStyleIndex"]?.jsonPrimitive?.intOrNull?.let { state.hairStyleIndex = it }
+                            config["clothingIndex"]?.jsonPrimitive?.intOrNull?.let { state.clothingIndex = it }
+                            config["eyeShapeIndex"]?.jsonPrimitive?.intOrNull?.let { state.eyeShapeIndex = it }
+                            config["augmentsIndex"]?.jsonPrimitive?.intOrNull?.let { state.augmentsIndex = it }
+                            config["tattoosIndex"]?.jsonPrimitive?.intOrNull?.let { state.tattoosIndex = it }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        isGenerating = false
+                    }
+                },
+                enabled = !isGenerating && aiPrompt.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                if (isGenerating) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                else Text("AUTO-GEN", fontSize = 12.sp)
+            }
+        }
+        
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            AndroidView(
+                factory = { context -> GltfAvatarView(context, "avatars/my_avatar.glb") },
+                modifier = Modifier.fillMaxSize()
+            )
+            
+            Column(
+                modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                listOf("R" to "ROTATE", "Q" to "ZOOM", "+" to "PAN", "D" to "RANDOM").forEach { (icon, label) ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.7f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) { Text(icon, color = Color.White) }
+                        }
+                        Text(label, fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top=4.dp))
+                    }
+                }
+            }
+            
+            Row(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.8f))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                listOf("1", "2", "3", "4", "5").forEachIndexed { index, icon ->
+                    Text(icon, color = if(index == 4) MaterialTheme.colorScheme.primary else Color.White)
+                }
+            }
+        }
+        
+        Row(modifier = Modifier.fillMaxWidth().weight(1f).background(MaterialTheme.colorScheme.background)) {
+            LazyColumn(
+                modifier = Modifier.width(80.dp).fillMaxHeight().background(MaterialTheme.colorScheme.surface),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val categories = listOf(
+                    "APPEARANCE", "BODY", "CLOTHING", "HAIR", "FACE", 
+                    "EYES", "ACCESSORIES", "AUGMENTS", "TATTOOS", "ANIMATIONS"
+                )
+                items(categories) { cat ->
+                    val isSelected = activeCategory == cat
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { activeCategory = cat }
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha=0.1f) else Color.Transparent)
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(modifier = Modifier.size(20.dp).background(if(isSelected) MaterialTheme.colorScheme.primary else Color.Gray, CircleShape))
+                            Spacer(Modifier.height(4.dp))
+                            Text(cat, fontSize = 7.sp, color = if(isSelected) MaterialTheme.colorScheme.primary else Color.Gray, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+            
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(12.dp)) {
+                when(activeCategory) {
+                    "APPEARANCE" -> AppearancePanel()
+                    "HAIR" -> HairPanel()
+                    "BODY" -> BodyPanel()
+                    "CLOTHING" -> ClothingPanel()
+                    "FACE" -> FacePanel()
+                    "EYES" -> EyesPanel()
+                    "ACCESSORIES" -> AccessoriesPanel()
+                    "AUGMENTS" -> AugmentsPanel()
+                    "TATTOOS" -> TattoosPanel()
+                    "ANIMATIONS" -> AnimationsPanel()
+                    else -> AppearancePanel()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AppearancePanel() {
+    val state = LocalAvatarState.current
+    
+    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Text("GENDER", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth().padding(top=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("M", "F", "N", "O").forEachIndexed { index, g ->
+                    Box(
+                        modifier = Modifier.weight(1f).aspectRatio(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if(state.gender == index) MaterialTheme.colorScheme.primary.copy(alpha=0.2f) else MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, if(state.gender == index) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(8.dp))
+                            .clickable { state.gender = index },
+                        contentAlignment = Alignment.Center
+                    ) { Text(g, color = if(state.gender == index) MaterialTheme.colorScheme.primary else Color.White) }
+                }
+            }
+        }
+        item {
+            Text("SKIN TONE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth().padding(top=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val tones = listOf(Color(0xFFFFDFC4), Color(0xFFF0D5BE), Color(0xFFD2B49D), Color(0xFFB48A6F), Color(0xFF8D5524), Color(0xFF5C3317), Color(0xFF291509))
+                tones.forEach { tone ->
+                    Box(modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(tone))
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("HEAD SHAPE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("04 / 12", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Slider(value = state.headShape, onValueChange = { state.headShape = it }, valueRange = 1f..12f, colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary))
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("AGE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${state.age.toInt()}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Slider(value = state.age, onValueChange = { state.age = it }, valueRange = 18f..80f, colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary))
+        }
+    }
+}
+
+@Composable
+fun HairPanel() {
+    val state = LocalAvatarState.current
+    var subTab by remember { mutableStateOf("STYLE") }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            listOf("STYLE", "COLOR", "FACIAL", "EYEBROWS").forEach { tab ->
+                Text(
+                    tab, 
+                    fontSize = 10.sp, 
+                    color = if(subTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { subTab = tab }.padding(bottom=8.dp)
+                )
+            }
+        }
+        Divider(color = MaterialTheme.colorScheme.outline)
+        Spacer(Modifier.height(12.dp))
+        val hairstyles = listOf("Buzz Cut", "Undercut", "Cyber Dreads", "Neon Bob", "Mohawk", "Slicked Back", "Pixie Cut", "Long Waves", "Braided")
+        LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            itemsIndexed(hairstyles) { index, style ->
+                val isSelected = state.hairStyleIndex == index
+                Box(
+                    modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { state.hairStyleIndex = index },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(style, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BodyPanel() {
+    val state = LocalAvatarState.current
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("BODY CONFIGURATION", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+        Text("HEIGHT", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(value = state.height, onValueChange = { state.height = it }, valueRange = 0f..100f)
+        Text("BUILD", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(value = state.build, onValueChange = { state.build = it }, valueRange = 0f..100f)
+    }
+}
+
+@Composable
+fun ClothingPanel() {
+    val state = LocalAvatarState.current
+    val clothingItems = listOf("Nomad Jacket", "Corpo Suit", "Streetwear Hoodie", "Tactical Vest", "Netrunner Suit", "Casual Tee")
+    LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        itemsIndexed(clothingItems) { index, item ->
+            val isSelected = state.clothingIndex == index
+            Box(
+                modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { state.clothingIndex = index },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(item, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+    }
+}
+
+@Composable
+fun FacePanel() {
+    val state = LocalAvatarState.current
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("JAWLINE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(value = state.jaw, onValueChange = { state.jaw = it }, valueRange = 0f..100f)
+        Text("CHEEKBONES", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(value = state.cheek, onValueChange = { state.cheek = it }, valueRange = 0f..100f)
+    }
+}
+
+@Composable
+fun EyesPanel() {
+    val state = LocalAvatarState.current
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text("EYE COLOR", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val colors = listOf(Color.Blue, Color.Green, Color(0xFF6B4423), Color.Red, Color.Magenta)
+            colors.forEach { c -> Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(c)) }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("EYE SHAPE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val eyeShapes = listOf("Natural", "Cyber-Optic", "Feline", "Synthetic", "Wide", "Narrow")
+        LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top=8.dp)) {
+            itemsIndexed(eyeShapes) { index, shape -> 
+                val isSelected = state.eyeShapeIndex == index
+                Box(
+                    modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { state.eyeShapeIndex = index },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(shape, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AccessoriesPanel() {
+    val accessories = listOf("Aviators", "Respirator", "Holo-Visor", "Ear Cuff", "Goggles", "Choker", "Neural Link", "Bandana", "Cyber-Patch")
+    LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(accessories) { acc -> 
+            Box(modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                Text(acc, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+    }
+}
+
+@Composable
+fun AugmentsPanel() {
+    val state = LocalAvatarState.current
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("CYBERWARE & IMPLANTS", fontSize = 12.sp, color = Color.White)
+        val augments = listOf("Mantis Blades", "Gorilla Arms", "Subdermal Armor", "Optic Scanner")
+        LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            itemsIndexed(augments) { index, aug -> 
+                val isSelected = state.augmentsIndex == index
+                Box(
+                    modifier = Modifier.aspectRatio(1.5f).clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { state.augmentsIndex = index },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(aug, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TattoosPanel() {
+    val state = LocalAvatarState.current
+    Text("BODY MODIFICATIONS", fontSize = 12.sp, color = Color.White)
+    Spacer(Modifier.height(8.dp))
+    val tattoos = listOf("Barcode", "Circuitry", "Yakuza Dragon", "Neon Lotus", "Tribal", "Hex Pattern", "Cyber-Skull", "Kanji", "Geometric")
+    LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        itemsIndexed(tattoos) { index, tattoo -> 
+            val isSelected = state.tattoosIndex == index
+            Box(
+                modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp))
+                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { state.tattoosIndex = index },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(tattoo, color = Color.White, fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+        }
+    }
+}
+
+@Composable
+fun AnimationsPanel() {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        listOf("IDLE NEUTRAL", "COMBAT READY", "RELAXED", "WALK CYCLE").forEach { anim ->
+            Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Text(anim)
+            }
+        }
+    }
+}
+
+@Composable
+fun PresetsMode() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("PRESETS", style = MaterialTheme.typography.titleLarge, color = Color.White)
+        Spacer(modifier = Modifier.height(16.dp))
+        val presets = listOf("Street Samurai", "Netrunner", "Corporate Shark", "Wasteland Nomad", "Tech Assassin", "Cyber-Doc")
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(presets) { presetName ->
+                Card(
+                    modifier = Modifier.aspectRatio(0.7f),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(presetName, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsScreen() {
+    var highQuality by remember { mutableStateOf(false) }
+    var cacheClearedMessage by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("SYSTEM CONFIGURATION", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("High Quality Rendering", color = Color.White)
+                    Text("Enables full PBR pipelines and 2K textures.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+                Switch(checked = highQuality, onCheckedChange = { highQuality = it })
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("Storage", color = Color.White)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = {
+                    context.cacheDir.deleteRecursively()
+                    cacheClearedMessage = "Cache cleared successfully."
+                }) { Text("Clear Local Cache") }
+                if (cacheClearedMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(cacheClearedMessage, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+fun shareImage(context: Context) {
+    try {
+        val imageFile = File(context.cacheDir, "images/shared_avatar.png")
+        imageFile.parentFile?.mkdirs()
+        context.assets.open("avatars/avatar_preview.png").use { input ->
+            FileOutputStream(imageFile).use { output ->
+                input.copyTo(output)
+            }
+        }
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            imageFile
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share Avatar"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+@Composable
+fun ChatMode() {
+    var messages by remember { mutableStateOf(listOf(Pair("Avatar", "Neural link established. What's the job, chombatta?"))) }
+    var input by remember { mutableStateOf("") }
+    var isSending by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("NEURAL CHAT", style = MaterialTheme.typography.titleLarge, color = Color.White)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            messages.forEach { (sender, text) ->
+                val isAvatar = sender == "Avatar"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = if (isAvatar) Arrangement.Start else Arrangement.End
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isAvatar) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary.copy(alpha=0.3f))
+                            .border(1.dp, if (isAvatar) Color.Transparent else MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                            .fillMaxWidth(0.85f)
+                    ) {
+                        Text(text, color = Color.White, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = input,
+                onValueChange = { input = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Enter message...") },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = {
-                    if (currentInput.isNotBlank()) {
-                        messages = messages + currentInput
-                        messages = messages + "I'm a simple mock avatar right now, but I hear you!"
-                        currentInput = ""
+                    if (input.isNotBlank()) {
+                        val prompt = input
+                        input = ""
+                        messages = messages + Pair("You", prompt)
+                        isSending = true
+                        scope.launch {
+                            val reply = com.aura.avatarstudio.api.chatWithAvatar(prompt)
+                            messages = messages + Pair("Avatar", reply)
+                            isSending = false
+                        }
                     }
-                }
+                },
+                enabled = !isSending && input.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Send")
+                if (isSending) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                else Text("SEND")
             }
         }
-    }
-}
-
-@Composable
-fun GalleryScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Gallery: Your saved avatars and images will appear here.", style = MaterialTheme.typography.bodyLarge)
     }
 }
