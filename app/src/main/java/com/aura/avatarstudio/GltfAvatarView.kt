@@ -19,6 +19,7 @@ class GltfAvatarView(
 
     private val renderer = HdAvatarRenderer(context)
     @Volatile private var loadStarted = false
+    @Volatile private var generatedLoadStarted = false
     @Volatile private var surfaceReady = false
 
     init {
@@ -50,6 +51,7 @@ class GltfAvatarView(
                 renderer.onSurfaceCreated(gl, config)
                 surfaceReady = true
                 loadStarted = false
+                generatedLoadStarted = false
                 notifyState(false, null)
                 startAvatarLoad()
             }
@@ -60,7 +62,12 @@ class GltfAvatarView(
                 height: Int
             ) = renderer.onSurfaceChanged(gl, width, height)
 
-            override fun onDrawFrame(gl: javax.microedition.khronos.opengles.GL10?) = renderer.onDrawFrame(gl)
+            override fun onDrawFrame(gl: javax.microedition.khronos.opengles.GL10?) {
+                renderer.onDrawFrame(gl)
+                if (!generatedLoadStarted) {
+                    GeneratedAvatarStore.consumeNew()?.let { file -> loadGeneratedAvatar(file) }
+                }
+            }
         })
         renderMode = RENDERMODE_CONTINUOUSLY
     }
@@ -95,7 +102,8 @@ class GltfAvatarView(
     }
 
     private fun loadGeneratedAvatar(file: File) {
-        if (!surfaceReady) return
+        if (!surfaceReady || generatedLoadStarted) return
+        generatedLoadStarted = true
         notifyState(false, null)
         Thread {
             val result = runCatching { GltfAvatarLoader(context).loadGlb(file.readBytes()) }
@@ -103,13 +111,28 @@ class GltfAvatarView(
                 result.fold(
                     onSuccess = { avatar ->
                         runCatching { renderer.setAvatar(avatar) }
-                            .onSuccess { notifyState(true, null) }
-                            .onFailure { error -> notifyState(false, error.message ?: error.javaClass.simpleName) }
+                            .onSuccess {
+                                generatedLoadStarted = false
+                                notifyState(true, null)
+                            }
+                            .onFailure { error ->
+                                generatedLoadStarted = false
+                                notifyState(false, error.message ?: error.javaClass.simpleName)
+                            }
                     },
-                    onFailure = { error -> notifyState(false, error.message ?: error.javaClass.simpleName) }
+                    onFailure = { error ->
+                        generatedLoadStarted = false
+                        notifyState(false, error.message ?: error.javaClass.simpleName)
+                    }
                 )
             }
         }.apply { name = "GeneratedAvatarLoader" }.start()
+    }
+
+    /** Consume and load the newest AI-generated GLB immediately. */
+    fun reloadGeneratedAvatar() {
+        if (!surfaceReady || generatedLoadStarted) return
+        GeneratedAvatarStore.consumeNew()?.let { file -> loadGeneratedAvatar(file) }
     }
 
     fun reloadAvatar() {
@@ -126,7 +149,6 @@ class GltfAvatarView(
     fun playAnimation_old(name: String) = queueEvent { renderer.playAnimation(name) }
 
     fun updateAppearance(skinTone: String, eyeColor: String, hairColor: String, atmosphere: String) {
-        GeneratedAvatarStore.consumeNew()?.let { loadGeneratedAvatar(it) }
         queueEvent { renderer.updateAppearance(skinTone, eyeColor, hairColor, atmosphere) }
     }
 
