@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,8 +30,12 @@ object MeshyService {
         } else {
             createTextTask(key, prompt.ifBlank { "high-detail cyberpunk humanoid avatar, neutral A-pose" })
         }
-        val completed = poll(key, taskId, if (base64Image.isNullOrBlank()) "/openapi/v2/text-to-3d/" else "/openapi/v1/image-to-3d/")
-        val glbUrl = completed.jsonObject["model_urls"]?.jsonObject?.get("glb")?.jsonPrimitive?.content
+        val completed = poll(
+            key,
+            taskId,
+            if (base64Image.isNullOrBlank()) "/openapi/v2/text-to-3d/" else "/openapi/v1/image-to-3d/"
+        )
+        val glbUrl = completed["model_urls"]?.jsonObject?.get("glb")?.jsonPrimitive?.content
             ?: throw IOException("Meshy completed without a GLB URL")
         val request = Request.Builder().url(glbUrl).get().build()
         client.newCall(request).execute().use { response ->
@@ -70,7 +75,7 @@ object MeshyService {
         }
     }
 
-    private suspend fun poll(key: String, taskId: String, pathPrefix: String): kotlinx.serialization.json.JsonObject {
+    private suspend fun poll(key: String, taskId: String, pathPrefix: String): JsonObject {
         repeat(MAX_POLLS) {
             val request = Request.Builder()
                 .url(BASE_URL + pathPrefix + taskId)
@@ -83,7 +88,11 @@ object MeshyService {
                 val obj = json.parseToJsonElement(text).jsonObject
                 when (obj["status"]?.jsonPrimitive?.content) {
                     "SUCCEEDED" -> return obj
-                    "FAILED", "CANCELED" -> throw IOException(obj["task_error"]?.jsonObject?.get("message")?.jsonPrimitive?.content ?: "Meshy generation failed")
+                    "FAILED", "CANCELED" -> throw IOException(
+                        obj["task_error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
+                            ?: "Meshy generation failed"
+                    )
+                    else -> Unit
                 }
             }
             delay(POLL_MS)
