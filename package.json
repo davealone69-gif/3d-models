@@ -1,0 +1,8 @@
+{
+  "name": "avatar-studio-android-rewrite",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Android build skipped in Node container'",
+    "dev": "echo 'Android dev skipped in Node container'"
+  }
+}

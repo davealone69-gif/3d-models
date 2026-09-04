@@ -1,0 +1,23 @@
+node_modules/
+.expo/
+dist/
+build/
+.env
+.env.*
+!.env.example
+src/services/keys.ts
+*.keystore
+*.jks
+
+# TS incremental build info
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# python test artifacts
+__pycache__/
+*.pyc
+
+# sandbox/tool clutter
+.cache/
+.npm/
+.sudo_as_admin_successful
