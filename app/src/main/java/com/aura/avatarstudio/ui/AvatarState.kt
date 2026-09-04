@@ -20,6 +20,8 @@ class AvatarState {
     var eyeColor by mutableStateOf("Blue")
     var hairColor by mutableStateOf("Neon Pink")
     var avatarView: com.aura.avatarstudio.GltfAvatarView? = null
+    var avatarReady by mutableStateOf(false)
+    var avatarLoadError by mutableStateOf<String?>(null)
     var hasPlayedStartupVideo by mutableStateOf(false)
 }
 
