@@ -24,28 +24,16 @@ class GltfAvatarView(
         setEGLContextClientVersion(3)
         setEGLConfigChooser { egl, display ->
             val attribs = intArrayOf(
-                javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
-                javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
-                javax.microedition.khronos.egl.EGL10.EGL_BLUE_SIZE, 8,
-                javax.microedition.khronos.egl.EGL10.EGL_ALPHA_SIZE, 8,
-                javax.microedition.khronos.egl.EGL10.EGL_DEPTH_SIZE, 24,
-                javax.microedition.khronos.egl.EGL10.EGL_STENCIL_SIZE, 8,
-                javax.microedition.khronos.egl.EGL10.EGL_SAMPLE_BUFFERS, 1,
-                javax.microedition.khronos.egl.EGL10.EGL_SAMPLES, 4,
-                javax.microedition.khronos.egl.EGL10.EGL_NONE
+                12324, 8, 12323, 8, 12322, 8, 12321, 8,
+                12325, 24, 12326, 8, 12338, 1, 12337, 4, 12344
             )
             val configs = arrayOfNulls<javax.microedition.khronos.egl.EGLConfig>(1)
             val numConfigs = IntArray(1)
             egl.eglChooseConfig(display, attribs, configs, 1, numConfigs)
             if (numConfigs[0] > 0) configs[0] else {
                 val fallback = intArrayOf(
-                    javax.microedition.khronos.egl.EGL10.EGL_RED_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL10.EGL_GREEN_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL_BLUE_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL_ALPHA_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL_DEPTH_SIZE, 24,
-                    javax.microedition.khronos.egl.EGL_STENCIL_SIZE, 8,
-                    javax.microedition.khronos.egl.EGL_NONE
+                    12324, 8, 12323, 8, 12322, 8, 12321, 8,
+                    12325, 24, 12326, 8, 12344
                 )
                 egl.eglChooseConfig(display, fallback, configs, 1, numConfigs)
                 configs[0]
@@ -108,9 +96,7 @@ class GltfAvatarView(
         if (!surfaceReady) return
         notifyState(false, null)
         Thread {
-            val result = runCatching {
-                GltfAvatarLoader(context).loadGlb(file.readBytes())
-            }
+            val result = runCatching { GltfAvatarLoader(context).loadGlb(file.readBytes()) }
             queueEvent {
                 result.fold(
                     onSuccess = { avatar ->
