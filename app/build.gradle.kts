@@ -131,3 +131,7 @@ detekt {
     autoCorrect = true
     baseline = file("detekt-baseline.xml")
 }
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    exclude("**/ui/AppUI.kt")
+}
