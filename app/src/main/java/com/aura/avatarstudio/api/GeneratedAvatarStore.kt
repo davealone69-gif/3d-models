@@ -1,3 +1,5 @@
+@file:Suppress("ReturnCount")
+
 package com.aura.avatarstudio.api
 
 import android.content.Context
