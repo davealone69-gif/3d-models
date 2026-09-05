@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -52,10 +53,7 @@ object LocalLlamaService {
     }
 
     fun resetSettings(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .remove(ENDPOINT_KEY)
-            .remove(MODEL_KEY)
-            .apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 
     suspend fun testConnection(context: Context): Result<String> = withContext(Dispatchers.IO) {
@@ -65,9 +63,7 @@ object LocalLlamaService {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) error("Local AI returned HTTP ${response.code}")
                 val body = response.body?.string().orEmpty()
-                val firstModel = json.parseToJsonElement(body).jsonObject["data"]
-                    ?.jsonObject?.get("0")?.jsonObject?.get("id")?.jsonPrimitive?.content
-                firstModel ?: model(context)
+                firstModelId(body) ?: model(context)
             }
         }
     }
@@ -107,7 +103,7 @@ object LocalLlamaService {
                     error("Local AI returned HTTP ${response.code}: ${body.take(300)}")
                 }
                 val root = json.parseToJsonElement(body).jsonObject
-                root["choices"]?.jsonObject?.get("0")?.jsonObject
+                root["choices"]?.jsonArray?.firstOrNull()?.jsonObject
                     ?.get("message")?.jsonObject?.get("content")?.jsonPrimitive?.content
                     ?: error("Local AI returned no message content")
             }
@@ -130,13 +126,15 @@ object LocalLlamaService {
             val request = Request.Builder().url(base + MODELS_PATH).get().build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@runCatching model(context)
-                val body = response.body?.string().orEmpty()
-                json.parseToJsonElement(body).jsonObject["data"]
-                    ?.jsonArray?.firstOrNull()?.jsonObject?.get("id")?.jsonPrimitive?.content
-                    ?: model(context)
+                firstModelId(response.body?.string().orEmpty()) ?: model(context)
             }
         }.getOrDefault(model(context))
     }
+
+    private fun firstModelId(body: String): String? = runCatching {
+        json.parseToJsonElement(body).jsonObject["data"]
+            ?.jsonArray?.firstOrNull()?.jsonObject?.get("id")?.jsonPrimitive?.content
+    }.getOrNull()
 
     private fun normalizeBaseUrl(value: String): String {
         var base = value.trim().trimEnd('/')
