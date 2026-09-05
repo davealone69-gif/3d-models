@@ -16,15 +16,19 @@ import java.util.concurrent.TimeUnit
 /**
  * Local-only Llama client.
  *
- * The model is hosted by a local Android runner such as MLC LLM/Layla and is
- * reached through an OpenAI-compatible loopback API. No cloud inference and
- * no PC/Ollama dependency are required.
+ * The model is hosted by a local Android runner and is reached through an
+ * OpenAI-compatible loopback API. No cloud inference and no PC/Ollama
+ * dependency are required.
+ *
+ * The access token is stored only in Android app preferences. It is never
+ * committed to source control or embedded as a repository secret.
  */
 object LocalLlamaService {
     private const val PREFS = "local_llama"
     private const val ENDPOINT_KEY = "endpoint"
     private const val MODEL_KEY = "model"
-    private const val DEFAULT_ENDPOINT = "http://127.0.0.1:8080"
+    private const val TOKEN_KEY = "token"
+    private const val DEFAULT_ENDPOINT = "http://127.0.0.1:8088"
     private const val DEFAULT_MODEL = "llama-3.2-3b-instruct"
     private const val CHAT_PATH = "/v1/chat/completions"
     private const val MODELS_PATH = "/v1/models"
@@ -45,10 +49,15 @@ object LocalLlamaService {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(MODEL_KEY, DEFAULT_MODEL) ?: DEFAULT_MODEL
 
-    fun saveSettings(context: Context, endpoint: String, model: String) {
+    fun token(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(TOKEN_KEY, "") ?: ""
+
+    fun saveSettings(context: Context, endpoint: String, model: String, token: String = "") {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(ENDPOINT_KEY, normalizeBaseUrl(endpoint))
             .putString(MODEL_KEY, model.trim().ifBlank { DEFAULT_MODEL })
+            .putString(TOKEN_KEY, token.trim())
             .apply()
     }
 
@@ -56,16 +65,18 @@ object LocalLlamaService {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 
-    /** Compatibility overload used by the existing ChatMode. Uses loopback defaults. */
+    /** Compatibility overload used by the existing ChatMode. Uses saved local settings. */
     suspend fun chat(prompt: String, history: List<Pair<String, String>>): String =
-        chatInternal(DEFAULT_ENDPOINT, DEFAULT_MODEL, prompt, history)
+        chatInternal(null, DEFAULT_ENDPOINT, DEFAULT_MODEL, "", prompt, history)
 
     suspend fun testConnection(context: Context): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val base = normalizeBaseUrl(endpoint(context))
-            val request = Request.Builder().url(base + MODELS_PATH).get().build()
+            val request = requestBuilder(base + MODELS_PATH, token(context)).get().build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) error("Local AI returned HTTP ${response.code}")
+                if (!response.isSuccessful) {
+                    error("Local AI returned HTTP ${response.code}: ${response.body?.string()?.take(300).orEmpty()}")
+                }
                 val body = response.body?.string().orEmpty()
                 firstModelId(body) ?: model(context)
             }
@@ -76,17 +87,19 @@ object LocalLlamaService {
         context: Context,
         prompt: String,
         history: List<Pair<String, String>>
-    ): String = chatInternal(endpoint(context), model(context), prompt, history)
+    ): String = chatInternal(context, endpoint(context), model(context), token(context), prompt, history)
 
     private suspend fun chatInternal(
+        context: Context?,
         endpoint: String,
         configuredModel: String,
+        token: String,
         prompt: String,
         history: List<Pair<String, String>>
     ): String = withContext(Dispatchers.IO) {
         try {
             val base = normalizeBaseUrl(endpoint)
-            val selectedModel = discoverModel(base, configuredModel)
+            val selectedModel = discoverModel(base, configuredModel, token)
             val messages = buildMessages(prompt, history)
             val payload = buildString {
                 append("{\"model\":")
@@ -103,8 +116,7 @@ object LocalLlamaService {
                 append("],\"stream\":false,\"temperature\":0.7,\"max_tokens\":512}")
             }
 
-            val request = Request.Builder()
-                .url(base + CHAT_PATH)
+            val request = requestBuilder(base + CHAT_PATH, token)
                 .post(payload.toRequestBody(mediaType))
                 .build()
 
@@ -132,14 +144,20 @@ object LocalLlamaService {
             add("user" to prompt)
         }
 
-    private fun discoverModel(base: String, configuredModel: String): String {
+    private fun discoverModel(base: String, configuredModel: String, token: String): String {
         return runCatching {
-            val request = Request.Builder().url(base + MODELS_PATH).get().build()
+            val request = requestBuilder(base + MODELS_PATH, token).get().build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@runCatching configuredModel
                 firstModelId(response.body?.string().orEmpty()) ?: configuredModel
             }
         }.getOrDefault(configuredModel)
+    }
+
+    private fun requestBuilder(url: String, token: String): Request.Builder {
+        val builder = Request.Builder().url(url).header("Accept", "application/json")
+        if (token.isNotBlank()) builder.header("Authorization", "Bearer $token")
+        return builder
     }
 
     private fun firstModelId(body: String): String? = runCatching {
