@@ -26,11 +26,9 @@ jobs:
       - name: Configure AI API secrets
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
           : "${GEMINI_API_KEY:=YOUR_GEMINI_API_KEY_HERE}"
-          : "${MESHY_API_KEY:=YOUR_MESHY_API_KEY_HERE}"
-          printf 'GEMINI_API_KEY=%s\nMESHY_API_KEY=%s\n' "$GEMINI_API_KEY" "$MESHY_API_KEY" > .env
+          printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > .env
 
       - name: Build with Gradle (assembleDebug)
         run: gradle assembleDebug --stacktrace
