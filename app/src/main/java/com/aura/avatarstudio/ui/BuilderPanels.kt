@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions", "FunctionNaming", "MaxLineLength", "MagicNumber")
+
 package com.aura.avatarstudio.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -66,11 +68,20 @@ fun AppearancePanel() {
         Text("Gender")
         ChoiceRow(listOf("M", "F", "N", "O"), state.gender, state::letGender)
         Text("Skin tone")
-        ChoiceRow(listOf("Fair", "Warm", "Tan", "Deep"), listOf("Fair", "Warm", "Tan", "Deep").indexOf(state.skinTone).coerceAtLeast(0)) { state.skinTone = listOf("Fair", "Warm", "Tan", "Deep")[it] }
+        ChoiceRow(
+            listOf("Fair", "Warm", "Tan", "Deep"),
+            listOf("Fair", "Warm", "Tan", "Deep").indexOf(state.skinTone).coerceAtLeast(0)
+        ) { state.skinTone = listOf("Fair", "Warm", "Tan", "Deep")[it] }
         Text("Eye colour")
-        ChoiceRow(listOf("Blue", "Green", "Amber", "Violet"), listOf("Blue", "Green", "Amber", "Violet").indexOf(state.eyeColor).coerceAtLeast(0)) { state.eyeColor = listOf("Blue", "Green", "Amber", "Violet")[it] }
+        ChoiceRow(
+            listOf("Blue", "Green", "Amber", "Violet"),
+            listOf("Blue", "Green", "Amber", "Violet").indexOf(state.eyeColor).coerceAtLeast(0)
+        ) { state.eyeColor = listOf("Blue", "Green", "Amber", "Violet")[it] }
         Text("Hair colour")
-        ChoiceRow(listOf("Neon Pink", "Cyan", "White", "Black"), listOf("Neon Pink", "Cyan", "White", "Black").indexOf(state.hairColor).coerceAtLeast(0)) { state.hairColor = listOf("Neon Pink", "Cyan", "White", "Black")[it] }
+        ChoiceRow(
+            listOf("Neon Pink", "Cyan", "White", "Black"),
+            listOf("Neon Pink", "Cyan", "White", "Black").indexOf(state.hairColor).coerceAtLeast(0)
+        ) { state.hairColor = listOf("Neon Pink", "Cyan", "White", "Black")[it] }
         ValueSlider("Head shape", state.headShape, 1f..12f) { state.headShape = it }
         ValueSlider("Age", state.age, 18f..80f) { state.age = it }
     }
@@ -105,7 +116,10 @@ fun ClothingPanel() {
     val state = LocalAvatarState.current
     PanelColumn {
         SectionTitle("CLOTHING")
-        ChoiceRow(listOf("Tech", "Street", "Armour", "Formal", "Tactical", "Minimal"), state.clothingIndex.coerceIn(-1, 5)) { state.clothingIndex = it }
+        ChoiceRow(
+            listOf("Tech", "Street", "Armour", "Formal", "Tactical", "Minimal"),
+            state.clothingIndex.coerceIn(-1, 5)
+        ) { state.clothingIndex = it }
     }
 }
 
@@ -114,7 +128,10 @@ fun HairPanel() {
     val state = LocalAvatarState.current
     PanelColumn {
         SectionTitle("HAIR")
-        ChoiceRow(listOf("Long", "Short", "Bob", "Mohawk", "Braids", "Ponytail", "Undercut", "Spikes", "Bun"), state.hairStyleIndex.coerceIn(-1, 8)) { state.hairStyleIndex = it }
+        ChoiceRow(
+            listOf("Long", "Short", "Bob", "Mohawk", "Braids", "Ponytail", "Undercut", "Spikes", "Bun"),
+            state.hairStyleIndex.coerceIn(-1, 8)
+        ) { state.hairStyleIndex = it }
     }
 }
 
@@ -134,7 +151,10 @@ fun EyesPanel() {
     val state = LocalAvatarState.current
     PanelColumn {
         SectionTitle("EYES")
-        ChoiceRow(listOf("Almond", "Round", "Sharp", "Wide", "Narrow", "Cyber"), state.eyeShapeIndex.coerceIn(-1, 5)) { state.eyeShapeIndex = it }
+        ChoiceRow(
+            listOf("Almond", "Round", "Sharp", "Wide", "Narrow", "Cyber"),
+            state.eyeShapeIndex.coerceIn(-1, 5)
+        ) { state.eyeShapeIndex = it }
         Text("Colour: ${state.eyeColor}")
     }
 }
@@ -157,7 +177,9 @@ fun AugmentsPanel() {
     val state = LocalAvatarState.current
     PanelColumn {
         SectionTitle("AUGMENTS")
-        ChoiceRow(listOf("None", "Eyes", "Arms", "Full cyber"), state.augmentsIndex.coerceIn(-1, 3)) { state.augmentsIndex = it }
+        ChoiceRow(listOf("None", "Eyes", "Arms", "Full cyber"), state.augmentsIndex.coerceIn(-1, 3)) {
+            state.augmentsIndex = it
+        }
     }
 }
 
@@ -166,7 +188,10 @@ fun TattoosPanel() {
     val state = LocalAvatarState.current
     PanelColumn {
         SectionTitle("TATTOOS")
-        ChoiceRow(listOf("None", "Circuit", "Tribal", "Neon", "Face", "Sleeve", "Back", "Chest", "Full"), state.tattoosIndex.coerceIn(-1, 8)) { state.tattoosIndex = it }
+        ChoiceRow(
+            listOf("None", "Circuit", "Tribal", "Neon", "Face", "Sleeve", "Back", "Chest", "Full"),
+            state.tattoosIndex.coerceIn(-1, 8)
+        ) { state.tattoosIndex = it }
     }
 }
 
