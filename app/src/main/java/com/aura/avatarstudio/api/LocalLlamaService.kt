@@ -140,7 +140,7 @@ object LocalLlamaService {
         buildList {
             add("system" to "You are a helpful AI avatar assistant. Keep answers concise and useful for avatar design, styling, scenes and creative direction.")
             history.forEach { (role, text) ->
-                add(if (role.equals("You", ignoreCase = true)) "user" else "assistant" to text)
+                add((if (role.equals("You", ignoreCase = true)) "user" else "assistant") to text)
             }
             add("user" to prompt)
         }
