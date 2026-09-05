@@ -1,3 +1,5 @@
+@file:Suppress("LongMethod", "FunctionNaming", "MaxLineLength")
+
 package com.aura.avatarstudio.ui
 
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.aura.avatarstudio.api.LocalLlamaService
@@ -31,7 +34,7 @@ fun LocalAiSetupDialog(
     var token by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var testing by remember { mutableStateOf(false) }
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -45,7 +48,10 @@ fun LocalAiSetupDialog(
         title = { Text("LOCAL AI") },
         text = {
             Column {
-                Text("Android-local Llama runner. Nothing is sent to a cloud AI service.", modifier = Modifier.padding(bottom = 12.dp))
+                Text(
+                    "Android-local Llama runner. Nothing is sent to a cloud AI service.",
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
                 OutlinedTextField(
                     value = endpoint,
                     onValueChange = { endpoint = it },
@@ -73,9 +79,7 @@ fun LocalAiSetupDialog(
                 }
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("LATER") }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("LATER") } },
         confirmButton = {
             Button(
                 enabled = !testing,
