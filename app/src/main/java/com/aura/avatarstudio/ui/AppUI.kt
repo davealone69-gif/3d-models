@@ -321,9 +321,9 @@ fun BuilderMode() {
                     when (activeCategory) {
                         "APPEARANCE" -> AppearancePanel()
                         "ATMOSPHERE" -> AtmospherePanel()
-                        "HAIR" -> HairPanel()
                         "BODY" -> BodyPanel()
                         "CLOTHING" -> ClothingPanel()
+                        "HAIR" -> HairPanel()
                         "FACE" -> FacePanel()
                         "EYES" -> EyesPanel()
                         "ACCESSORIES" -> AccessoriesPanel()
@@ -334,170 +334,6 @@ fun BuilderMode() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun AppearancePanel() {
-    val state = LocalAvatarState.current
-    LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            Text("GENDER", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth().padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                listOf("M", "F", "N", "O").forEachIndexed { index, value ->
-                    Box(Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(7.dp))
-                        .background(if (state.gender == index) MaterialTheme.colorScheme.primary.copy(alpha = .2f) else MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, if (state.gender == index) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(7.dp))
-                        .clickable { state.gender = index }, contentAlignment = Alignment.Center) { Text(value, color = Color.White) }
-                }
-            }
-        }
-        item {
-            Text("SKIN TONE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val tones = listOf("Pale/Vampiric", "Fair", "Tan", "Olive", "Brown", "Ebony")
-            Row(Modifier.fillMaxWidth().padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                tones.forEach { tone ->
-                    val selected = state.skinTone == tone
-                    Box(Modifier.weight(1f).height(30.dp).clip(RoundedCornerShape(6.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { state.skinTone = tone; state.avatarView?.updateAppearance(tone, state.eyeColor, state.hairColor, state.atmosphere) }, contentAlignment = Alignment.Center) {
-                        Text(tone.take(3).uppercase(), color = Color.White, fontSize = 8.sp)
-                    }
-                }
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("HEAD SHAPE", fontSize = 10.sp); Text("${state.headShape.toInt()} / 12", fontSize = 10.sp) }
-            Slider(state.headShape, { state.headShape = it }, valueRange = 1f..12f)
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("AGE", fontSize = 10.sp); Text("${state.age.toInt()}", fontSize = 10.sp) }
-            Slider(state.age, { state.age = it }, valueRange = 18f..80f)
-        }
-    }
-}
-
-@Composable
-fun HairPanel() {
-    val state = LocalAvatarState.current
-    var subTab by remember { mutableStateOf("STYLE") }
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            listOf("STYLE", "COLOR", "FACIAL", "EYEBROWS").forEach { tab -> Text(tab, fontSize = 9.sp, color = if (subTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { subTab = tab }.padding(bottom = 7.dp)) }
-        }
-        HorizontalDivider()
-        Spacer(Modifier.height(10.dp))
-        when (subTab) {
-            "STYLE" -> {
-                val hairstyles = listOf("Buzz Cut", "Undercut", "Cyber Dreads", "Neon Bob", "Mohawk", "Slicked Back", "Pixie Cut", "Long Waves", "Braided")
-                LazyVerticalGrid(GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    itemsIndexed(hairstyles) { index, style ->
-                        Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(7.dp)).background(if (state.hairStyleIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.hairStyleIndex = index }, contentAlignment = Alignment.Center) { Text(style, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center) }
-                    }
-                }
-            }
-            "COLOR" -> ColorChoices(listOf("Black", "Pink", "Crimson Red", "Blonde", "Blue", "Whiteout"), true)
-            "FACIAL" -> ColorChoices(listOf("Black", "Crimson Red", "Pink", "Blonde"), false)
-            "EYEBROWS" -> ColorChoices(listOf("Black", "Brown", "Blonde", "Blue"), false)
-        }
-    }
-}
-
-@Composable
-fun ColorChoices(values: List<String>, hair: Boolean) {
-    val state = LocalAvatarState.current
-    LazyVerticalGrid(GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        items(values) { value ->
-            val selected = if (hair) state.hairColor == value else false
-            Box(Modifier.height(48.dp).clip(RoundedCornerShape(7.dp)).background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable {
-                if (hair) state.hairColor = value
-                state.avatarView?.updateAppearance(state.skinTone, state.eyeColor, state.hairColor, state.atmosphere)
-            }, contentAlignment = Alignment.Center) { Text(value, color = Color.White, fontSize = 10.sp) }
-        }
-    }
-}
-
-@Composable
-fun AtmospherePanel() {
-    val state = LocalAvatarState.current
-    val atmospheres = listOf("Neon Cityscape", "Dark Studio", "Blood Red Mist", "Vampire Lair", "Fiery Hellscape", "Neutral Studio")
-    LazyVerticalGrid(GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        items(atmospheres) { item ->
-            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(7.dp)).background(if (state.atmosphere == item) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.atmosphere = item; state.avatarView?.updateAppearance(state.skinTone, state.eyeColor, state.hairColor, item) }, contentAlignment = Alignment.Center) { Text(item, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center) }
-        }
-    }
-}
-
-@Composable
-fun BodyPanel() {
-    val state = LocalAvatarState.current
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("BODY CONFIGURATION", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
-        Text("HEIGHT", fontSize = 9.sp); Slider(state.height, { state.height = it }, valueRange = 0f..100f)
-        Text("BUILD", fontSize = 9.sp); Slider(state.build, { state.build = it }, valueRange = 0f..100f)
-    }
-}
-
-@Composable
-fun ClothingPanel() {
-    val state = LocalAvatarState.current
-    val itemsList = listOf("Nomad Jacket", "Corpo Suit", "Streetwear Hoodie", "Tactical Vest", "Netrunner Suit", "Casual Tee", "Demonic Knight Armor", "Medieval Leather Armor")
-    LazyVerticalGrid(GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        itemsIndexed(itemsList) { index, item -> Box(Modifier.aspectRatio(1.5f).clip(RoundedCornerShape(7.dp)).background(if (state.clothingIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.clothingIndex = index }, contentAlignment = Alignment.Center) { Text(item, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center) } }
-    }
-}
-
-@Composable
-fun FacePanel() {
-    val state = LocalAvatarState.current
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("JAWLINE", fontSize = 9.sp); Slider(state.jaw, { state.jaw = it }, valueRange = 0f..100f)
-        Text("CHEEKBONES", fontSize = 9.sp); Slider(state.cheek, { state.cheek = it }, valueRange = 0f..100f)
-    }
-}
-
-@Composable
-fun EyesPanel() {
-    val state = LocalAvatarState.current
-    val colors = listOf("Blue", "Green", "Brown", "Red", "Pink")
-    val shapes = listOf("Natural", "Cyber-Optic", "Feline", "Synthetic", "Wide", "Narrow")
-    Column(Modifier.fillMaxSize()) {
-        Text("EYE COLOR", fontSize = 9.sp)
-        Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            colors.forEach { value -> Box(Modifier.weight(1f).height(30.dp).clip(RoundedCornerShape(6.dp)).background(if (state.eyeColor == value) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.eyeColor = value; state.avatarView?.updateAppearance(state.skinTone, value, state.hairColor, state.atmosphere) }, contentAlignment = Alignment.Center) { Text(value.take(3).uppercase(), color = Color.White, fontSize = 8.sp) } }
-        }
-        Text("EYE SHAPE", fontSize = 9.sp)
-        LazyVerticalGrid(GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(top = 7.dp)) {
-            itemsIndexed(shapes) { index, shape -> Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(7.dp)).background(if (state.eyeShapeIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.eyeShapeIndex = index }, contentAlignment = Alignment.Center) { Text(shape, color = Color.White, fontSize = 8.sp, textAlign = TextAlign.Center) } }
-        }
-    }
-}
-
-@Composable
-fun AccessoriesPanel() {
-    val values = listOf("Aviators", "Respirator", "Holo-Visor", "Ear Cuff", "Goggles", "Choker", "Neural Link", "Bandana", "Cyber-Patch")
-    LazyVerticalGrid(GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) { items(values) { Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(7.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) { Text(it, color = Color.White, fontSize = 8.sp, textAlign = TextAlign.Center) } } }
-}
-
-@Composable
-fun AugmentsPanel() {
-    val state = LocalAvatarState.current
-    val values = listOf("Mantis Blades", "Gorilla Arms", "Subdermal Armor", "Optic Scanner")
-    LazyVerticalGrid(GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) { itemsIndexed(values) { index, value -> Box(Modifier.aspectRatio(1.5f).clip(RoundedCornerShape(7.dp)).background(if (state.augmentsIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.augmentsIndex = index }, contentAlignment = Alignment.Center) { Text(value, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center) } } }
-}
-
-@Composable
-fun TattoosPanel() {
-    val state = LocalAvatarState.current
-    val values = listOf("Barcode", "Circuitry", "Yakuza Dragon", "Neon Lotus", "Tribal", "Hex Pattern", "Cyber-Skull", "Kanji", "Geometric")
-    LazyVerticalGrid(GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) { itemsIndexed(values) { index, value -> Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(7.dp)).background(if (state.tattoosIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant).clickable { state.tattoosIndex = index }, contentAlignment = Alignment.Center) { Text(value, color = Color.White, fontSize = 8.sp, textAlign = TextAlign.Center) } } }
-}
-
-@Composable
-fun AnimationsPanel() {
-    val state = LocalAvatarState.current
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("IDLE NEUTRAL", "COMBAT READY", "RELAXED", "WALK CYCLE").forEachIndexed { index, anim -> Button(onClick = { state.avatarView?.playAnimation(index) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) { Text(anim, fontSize = 10.sp) } }
     }
 }
 
@@ -584,11 +420,20 @@ fun ChatMode() {
             Spacer(Modifier.width(6.dp))
             Button(onClick = {
                 if (input.isNotBlank()) {
-                    val prompt = input; input = ""; messages = messages + ("You" to prompt); isSending = true
+                    val prompt = input
+                    input = ""
+                    messages = messages + ("You" to prompt)
+                    isSending = true
                     scope.launch {
-                        try { messages = messages + ("Avatar" to com.aura.avatarstudio.api.chatWithAvatar(prompt)) }
-                        catch (e: Exception) { com.aura.avatarstudio.util.NetworkErrorHandler.handleError(context, e) }
-                        finally { isSending = false }
+                        try {
+                            val history = messages.map { it.first to it.second }
+                            val aiResponse = com.aura.avatarstudio.api.LocalLlamaService.chat(prompt, history)
+                            messages = messages + ("Avatar" to aiResponse)
+                        } catch (e: Exception) {
+                            com.aura.avatarstudio.util.NetworkErrorHandler.handleError(context, e)
+                        } finally {
+                            isSending = false
+                        }
                     }
                 }
             }, enabled = !isSending && input.isNotBlank()) { if (isSending) CircularProgressIndicator(Modifier.size(15.dp), color = Color.White) else Text("SEND", fontSize = 10.sp) }
