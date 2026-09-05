@@ -3,76 +3,74 @@ package com.aura.avatarstudio.api
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.codeshipping.llamakotlin.LlamaModel
-import java.io.File
-import java.io.FileOutputStream
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
 
-/** Completely on-device Llama inference through llama.cpp. */
+/**
+ * Local-only Llama client.
+ *
+ * The model is hosted by a local Android runner such as MLC LLM/Layla and is
+ * reached through an OpenAI-compatible loopback API. No cloud inference and
+ * no PC/Ollama dependency are required.
+ */
 object LocalLlamaService {
-    private const val MODEL_DIRECTORY = "models"
-    private const val MODEL_FILE_NAME = "llama3.gguf"
-    private const val APP_EXTERNAL_MODEL_ROOT = "/sdcard/Android/data/com.aura.avatarstudio.rewrite/files"
+    private const val PREFS = "local_llama"
+    private const val ENDPOINT_KEY = "endpoint"
+    private const val MODEL_KEY = "model"
+    private const val DEFAULT_ENDPOINT = "http://127.0.0.1:8080"
+    private const val DEFAULT_MODEL = "llama-3.2-3b-instruct"
+    private const val CHAT_PATH = "/v1/chat/completions"
+    private const val MODELS_PATH = "/v1/models"
 
-    private var model: LlamaModel? = null
-    private var loadedPath: String? = null
+    private val json = Json { ignoreUnknownKeys = true }
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(3, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+    private val mediaType = "application/json; charset=utf-8".toMediaType()
 
-    fun modelFile(context: Context): File =
-        File(context.getExternalFilesDir(null), "$MODEL_DIRECTORY/$MODEL_FILE_NAME")
+    fun endpoint(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(ENDPOINT_KEY, DEFAULT_ENDPOINT) ?: DEFAULT_ENDPOINT
 
-    private fun defaultModelFile(): File =
-        File(APP_EXTERNAL_MODEL_ROOT, "$MODEL_DIRECTORY/$MODEL_FILE_NAME")
+    fun model(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(MODEL_KEY, DEFAULT_MODEL) ?: DEFAULT_MODEL
 
-    fun hasModel(context: Context): Boolean =
-        modelFile(context).isFile && modelFile(context).length() > 0L
-
-    fun hasModel(): Boolean = defaultModelFile().isFile && defaultModelFile().length() > 0L
-
-    suspend fun installModel(context: Context, source: java.io.InputStream) = withContext(Dispatchers.IO) {
-        val destination = modelFile(context)
-        destination.parentFile?.mkdirs()
-        source.use { input ->
-            FileOutputStream(destination).use { output -> input.copyTo(output) }
-        }
-        close()
+    fun saveSettings(context: Context, endpoint: String, model: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(ENDPOINT_KEY, normalizeBaseUrl(endpoint))
+            .putString(MODEL_KEY, model.trim().ifBlank { DEFAULT_MODEL })
+            .apply()
     }
 
-    private suspend fun loadPath(path: String): Boolean = withContext(Dispatchers.IO) {
-        if (!File(path).isFile) return@withContext false
-        if (loadedPath == path && model?.isLoaded == true) return@withContext true
-
-        close()
-        model = LlamaModel.load(path) {
-            contextSize = 4096
-            batchSize = 512
-            threads = maxOf(2, Runtime.getRuntime().availableProcessors() - 1)
-            threadsBatch = maxOf(2, Runtime.getRuntime().availableProcessors() - 1)
-            temperature = 0.7f
-            topP = 0.9f
-            topK = 40
-            repeatPenalty = 1.1f
-            maxTokens = 512
-            useMmap = true
-            useMlock = false
-            gpuLayers = 0
-        }
-        loadedPath = path
-        model?.isLoaded == true
+    fun resetSettings(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .remove(ENDPOINT_KEY)
+            .remove(MODEL_KEY)
+            .apply()
     }
 
-    suspend fun load(context: Context): Boolean =
-        loadPath(modelFile(context).absolutePath)
-
-    suspend fun chat(prompt: String, history: List<Pair<String, String>>): String =
-        withContext(Dispatchers.IO) {
-            try {
-                if (!loadPath(defaultModelFile().absolutePath)) {
-                    return@withContext "Local Llama model not installed. Put $MODEL_FILE_NAME in the app's local model storage."
-                }
-                generate(prompt, history)
-            } catch (e: Exception) {
-                "Local Llama error: ${e.message ?: "unknown inference error"}"
+    suspend fun testConnection(context: Context): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val base = normalizeBaseUrl(endpoint(context))
+            val request = Request.Builder().url(base + MODELS_PATH).get().build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) error("Local AI returned HTTP ${response.code}")
+                val body = response.body?.string().orEmpty()
+                val firstModel = json.parseToJsonElement(body).jsonObject["data"]
+                    ?.jsonObject?.get("0")?.jsonObject?.get("id")?.jsonPrimitive?.content
+                firstModel ?: model(context)
             }
         }
+    }
 
     suspend fun chat(
         context: Context,
@@ -80,38 +78,71 @@ object LocalLlamaService {
         history: List<Pair<String, String>>
     ): String = withContext(Dispatchers.IO) {
         try {
-            if (!load(context)) {
-                return@withContext "Local Llama model not installed. Add $MODEL_FILE_NAME to local model storage first."
+            val base = normalizeBaseUrl(endpoint(context))
+            val selectedModel = discoverModel(context, base)
+            val messages = buildMessages(prompt, history)
+            val payload = buildString {
+                append("{\"model\":")
+                append(json.encodeToString(kotlinx.serialization.serializer<String>(), selectedModel))
+                append(",\"messages\":[")
+                messages.forEachIndexed { index, message ->
+                    if (index > 0) append(',')
+                    append("{\"role\":")
+                    append(json.encodeToString(kotlinx.serialization.serializer<String>(), message.first))
+                    append(",\"content\":")
+                    append(json.encodeToString(kotlinx.serialization.serializer<String>(), message.second))
+                    append('}')
+                }
+                append("],\"stream\":false,\"temperature\":0.7,\"max_tokens\":512}")
             }
-            generate(prompt, history)
+
+            val request = Request.Builder()
+                .url(base + CHAT_PATH)
+                .post(payload.toRequestBody(mediaType))
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                if (!response.isSuccessful) {
+                    error("Local AI returned HTTP ${response.code}: ${body.take(300)}")
+                }
+                val root = json.parseToJsonElement(body).jsonObject
+                root["choices"]?.jsonObject?.get("0")?.jsonObject
+                    ?.get("message")?.jsonObject?.get("content")?.jsonPrimitive?.content
+                    ?: error("Local AI returned no message content")
+            }
         } catch (e: Exception) {
-            "Local Llama error: ${e.message ?: "unknown inference error"}"
+            "Local AI unavailable at ${endpoint(context)}. Start the Android Llama runner and load Llama 3.2, then retry. (${e.message ?: "connection error"})"
         }
     }
 
-    private suspend fun generate(prompt: String, history: List<Pair<String, String>>): String {
-        val conversation = buildString {
-            append("<|begin_of_text|>")
-            append("<|start_header_id|>system<|end_header_id|>\n\n")
-            append("You are a helpful, slightly edgy AI avatar assistant.")
-            append("<|eot_id|>")
+    private fun buildMessages(prompt: String, history: List<Pair<String, String>>): List<Pair<String, String>> =
+        buildList {
+            add("system" to "You are a helpful AI avatar assistant. Keep answers concise and useful for avatar design, styling, scenes and creative direction.")
             history.forEach { (role, text) ->
-                append("<|start_header_id|>")
-                append(if (role == "You") "user" else "assistant")
-                append("<|end_header_id|>\n\n")
-                append(text)
-                append("<|eot_id|>")
+                add(if (role.equals("You", ignoreCase = true)) "user" else "assistant" to text)
             }
-            append("<|start_header_id|>user<|end_header_id|>\n\n")
-            append(prompt)
-            append("<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n")
+            add("user" to prompt)
         }
-        return model?.generate(conversation) ?: "Local Llama engine is not loaded."
+
+    private fun discoverModel(context: Context, base: String): String {
+        return runCatching {
+            val request = Request.Builder().url(base + MODELS_PATH).get().build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@runCatching model(context)
+                val body = response.body?.string().orEmpty()
+                json.parseToJsonElement(body).jsonObject["data"]
+                    ?.jsonArray?.firstOrNull()?.jsonObject?.get("id")?.jsonPrimitive?.content
+                    ?: model(context)
+            }
+        }.getOrDefault(model(context))
     }
 
-    fun close() {
-        model?.close()
-        model = null
-        loadedPath = null
+    private fun normalizeBaseUrl(value: String): String {
+        var base = value.trim().trimEnd('/')
+        if (base.endsWith("/v1")) base = base.removeSuffix("/v1")
+        if (base.endsWith(CHAT_PATH)) base = base.removeSuffix(CHAT_PATH)
+        if (base.endsWith(MODELS_PATH)) base = base.removeSuffix(MODELS_PATH)
+        return base.ifBlank { DEFAULT_ENDPOINT }
     }
 }
