@@ -56,6 +56,10 @@ object LocalLlamaService {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 
+    /** Compatibility overload used by the existing ChatMode. Uses loopback defaults. */
+    suspend fun chat(prompt: String, history: List<Pair<String, String>>): String =
+        chatInternal(DEFAULT_ENDPOINT, DEFAULT_MODEL, prompt, history)
+
     suspend fun testConnection(context: Context): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val base = normalizeBaseUrl(endpoint(context))
@@ -72,10 +76,17 @@ object LocalLlamaService {
         context: Context,
         prompt: String,
         history: List<Pair<String, String>>
+    ): String = chatInternal(endpoint(context), model(context), prompt, history)
+
+    private suspend fun chatInternal(
+        endpoint: String,
+        configuredModel: String,
+        prompt: String,
+        history: List<Pair<String, String>>
     ): String = withContext(Dispatchers.IO) {
         try {
-            val base = normalizeBaseUrl(endpoint(context))
-            val selectedModel = discoverModel(context, base)
+            val base = normalizeBaseUrl(endpoint)
+            val selectedModel = discoverModel(base, configuredModel)
             val messages = buildMessages(prompt, history)
             val payload = buildString {
                 append("{\"model\":")
@@ -108,7 +119,7 @@ object LocalLlamaService {
                     ?: error("Local AI returned no message content")
             }
         } catch (e: Exception) {
-            "Local AI unavailable at ${endpoint(context)}. Start the Android Llama runner and load Llama 3.2, then retry. (${e.message ?: "connection error"})"
+            "Local AI unavailable at ${normalizeBaseUrl(endpoint)}. Start the Android Llama runner and load Llama 3.2, then retry. (${e.message ?: "connection error"})"
         }
     }
 
@@ -121,14 +132,14 @@ object LocalLlamaService {
             add("user" to prompt)
         }
 
-    private fun discoverModel(context: Context, base: String): String {
+    private fun discoverModel(base: String, configuredModel: String): String {
         return runCatching {
             val request = Request.Builder().url(base + MODELS_PATH).get().build()
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@runCatching model(context)
-                firstModelId(response.body?.string().orEmpty()) ?: model(context)
+                if (!response.isSuccessful) return@runCatching configuredModel
+                firstModelId(response.body?.string().orEmpty()) ?: configuredModel
             }
-        }.getOrDefault(model(context))
+        }.getOrDefault(configuredModel)
     }
 
     private fun firstModelId(body: String): String? = runCatching {
