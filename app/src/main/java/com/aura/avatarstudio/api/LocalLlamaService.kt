@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions", "TooGenericExceptionCaught", "MaxLineLength", "MagicNumber")
+
 package com.aura.avatarstudio.api
 
 import android.content.Context
