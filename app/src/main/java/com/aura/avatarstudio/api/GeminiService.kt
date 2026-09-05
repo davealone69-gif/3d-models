@@ -4,7 +4,10 @@ package com.aura.avatarstudio.api
 
 import com.aura.avatarstudio.BuildConfig
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -68,6 +71,8 @@ object RetrofitClient {
     }
 }
 
+private val meshGenerationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
 private val avatarSchema = Json.parseToJsonElement(
     """
     {"type":"OBJECT","properties":{
@@ -106,7 +111,18 @@ suspend fun chatWithAvatar(prompt: String): String = withContext(Dispatchers.IO)
     response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "Connection lost. Neural link severed."
 }
 
+/** Runs AI configuration and starts the real 3D GLB generation independently. */
 suspend fun generateAvatarConfigWithImage(prompt: String, base64Image: String? = null): String = withContext(Dispatchers.IO) {
+    val meshPrompt = prompt.ifBlank { "high-detail cyberpunk humanoid avatar, neutral A-pose" }
+    meshGenerationScope.launch {
+        runCatching {
+            MeshyService.generateAndPublish(
+                prompt = meshPrompt,
+                base64Image = base64Image
+            )
+        }
+    }
+
     val parts = buildList {
         if (prompt.isNotBlank() || base64Image == null) {
             add(Part(text = prompt.ifBlank { "Extract avatar features from this image." }))
@@ -115,13 +131,8 @@ suspend fun generateAvatarConfigWithImage(prompt: String, base64Image: String? =
             add(Part(inlineData = InlineData("image/jpeg", base64Image)))
         }
     }
-    val response = RetrofitClient.service.generateContent(BuildConfig.GEMINI_API_KEY, configRequest(parts))
-    val result = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
-    runCatching {
-        MeshyService.generateAndPublish(
-            prompt = prompt.ifBlank { "high-detail cyberpunk humanoid avatar, neutral A-pose" },
-            base64Image = base64Image
-        )
-    }
-    result
+    val apiKey = BuildConfig.GEMINI_API_KEY.trim()
+    if (apiKey.isBlank() || apiKey.startsWith("YOUR_")) return@withContext "{}"
+    val response = RetrofitClient.service.generateContent(apiKey, configRequest(parts))
+    response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "{}"
 }
