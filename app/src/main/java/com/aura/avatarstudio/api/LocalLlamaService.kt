@@ -1,80 +1,95 @@
 package com.aura.avatarstudio.api
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
+import org.codeshipping.llamakotlin.LlamaModel
+import java.io.File
+import java.io.FileOutputStream
 
+/** Completely on-device Llama inference through llama.cpp. */
 object LocalLlamaService {
-    private const val OLLAMA_BASE_URL = "http://192.168.1.50:11434"
-    private const val MODEL_NAME = "llama3"
+    private const val MODEL_DIRECTORY = "models"
+    private const val MODEL_FILE_NAME = "llama3.gguf"
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
+    private var model: LlamaModel? = null
+    private var loadedPath: String? = null
 
-    private val json = Json { ignoreUnknownKeys = true }
+    fun modelFile(context: Context): File =
+        File(context.getExternalFilesDir(null), "$MODEL_DIRECTORY/$MODEL_FILE_NAME")
 
-    @Serializable
-    data class ChatMessage(val role: String, val content: String)
+    fun hasModel(context: Context): Boolean =
+        modelFile(context).isFile && modelFile(context).length() > 0L
 
-    @Serializable
-    data class ChatRequest(
-        val model: String,
-        val messages: List<ChatMessage>,
-        val stream: Boolean = false
-    )
-
-    @Serializable
-    data class ChatResponse(val message: Message)
-
-    @Serializable
-    data class Message(val role: String, val content: String)
-
-    suspend fun chat(prompt: String, history: List<Pair<String, String>>): String =
-        withContext(Dispatchers.IO) {
-            try {
-                val messages = mutableListOf(
-                    ChatMessage(
-                        "system",
-                        "You are a helpful, slightly edgy AI avatar assistant."
-                    )
-                )
-                history.forEach { (role, text) ->
-                    messages.add(
-                        ChatMessage(
-                            if (role == "You") "user" else "assistant",
-                            text
-                        )
-                    )
-                }
-                messages.add(ChatMessage("user", prompt))
-
-                val requestBody = json.encodeToString(ChatRequest(MODEL_NAME, messages))
-                    .toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url("$OLLAMA_BASE_URL/api/chat")
-                    .post(requestBody)
-                    .build()
-
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        throw Exception("Ollama request failed: HTTP ${response.code}")
-                    }
-                    val responseBody = response.body?.string()
-                        ?: throw Exception("Empty response from Llama")
-                    val chatResponse = json.decodeFromString<ChatResponse>(responseBody)
-                    chatResponse.message.content
-                }
-            } catch (e: Exception) {
-                "Error connecting to local Llama AI. Is your PC running Ollama? (${e.message})"
-            }
+    suspend fun installModel(context: Context, source: java.io.InputStream) = withContext(Dispatchers.IO) {
+        val destination = modelFile(context)
+        destination.parentFile?.mkdirs()
+        source.use { input ->
+            FileOutputStream(destination).use { output -> input.copyTo(output) }
         }
+        close()
+    }
+
+    suspend fun load(context: Context): Boolean = withContext(Dispatchers.IO) {
+        val path = modelFile(context).absolutePath
+        if (!File(path).isFile) return@withContext false
+        if (loadedPath == path && model?.isLoaded == true) return@withContext true
+
+        close()
+        model = LlamaModel.load(path) {
+            contextSize = 4096
+            batchSize = 512
+            threads = maxOf(2, Runtime.getRuntime().availableProcessors() - 1)
+            threadsBatch = maxOf(2, Runtime.getRuntime().availableProcessors() - 1)
+            temperature = 0.7f
+            topP = 0.9f
+            topK = 40
+            repeatPenalty = 1.1f
+            maxTokens = 512
+            useMmap = true
+            useMlock = false
+            gpuLayers = 0
+        }
+        loadedPath = path
+        model?.isLoaded == true
+    }
+
+    suspend fun chat(
+        context: Context,
+        prompt: String,
+        history: List<Pair<String, String>>
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            if (!load(context)) {
+                return@withContext "Local Llama model not installed. Add $MODEL_FILE_NAME to local model storage first."
+            }
+
+            val conversation = buildString {
+                append("<|begin_of_text|>")
+                append("<|start_header_id|>system<|end_header_id|>\n\n")
+                append("You are a helpful, slightly edgy AI avatar assistant.")
+                append("<|eot_id|>")
+                history.forEach { (role, text) ->
+                    append("<|start_header_id|>")
+                    append(if (role == "You") "user" else "assistant")
+                    append("<|end_header_id|>\n\n")
+                    append(text)
+                    append("<|eot_id|>")
+                }
+                append("<|start_header_id|>user<|end_header_id|>\n\n")
+                append(prompt)
+                append("<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n")
+            }
+
+            model?.generate(conversation) ?: "Local Llama engine is not loaded."
+        } catch (e: Exception) {
+            "Local Llama error: ${e.message ?: "unknown inference error"}"
+        }
+    }
+
+    fun close() {
+        model?.close()
+        model = null
+        loadedPath = null
+    }
 }
