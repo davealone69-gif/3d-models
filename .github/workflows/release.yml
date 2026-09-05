@@ -35,6 +35,8 @@ jobs:
           test -n "$KEYSTORE_PASSWORD"
           test -n "$KEY_ALIAS"
           test -n "$KEY_PASSWORD"
+          : "${GEMINI_API_KEY:=YOUR_GEMINI_API_KEY_HERE}"
+          : "${MESHY_API_KEY:=YOUR_MESHY_API_KEY_HERE}"
           printf 'GEMINI_API_KEY=%s\nMESHY_API_KEY=%s\n' "$GEMINI_API_KEY" "$MESHY_API_KEY" > .env
           echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
           export KEYSTORE_PATH=$(pwd)/release.keystore
