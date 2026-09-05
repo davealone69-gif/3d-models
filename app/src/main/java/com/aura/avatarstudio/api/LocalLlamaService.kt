@@ -11,76 +11,70 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
-/** Local OpenAI-compatible Llama service. The endpoint is configurable so it can point at a PC. */
 object LocalLlamaService {
-    private const val DEFAULT_BASE_URL = "http://10.0.2.2:1234/v1"
-    private const val DEFAULT_MODEL = "llama-3.2-3b-instruct"
+    private const val OLLAMA_BASE_URL = "http://192.168.1.50:11434"
+    private const val MODEL_NAME = "llama3"
 
-    private val json = Json { ignoreUnknownKeys = true }
     private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    @Volatile
-    var baseUrl: String = DEFAULT_BASE_URL
-
-    @Volatile
-    var model: String = DEFAULT_MODEL
+    private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
-    private data class Message(val role: String, val content: String)
+    data class ChatMessage(val role: String, val content: String)
 
     @Serializable
-    private data class ChatRequest(
+    data class ChatRequest(
         val model: String,
-        val messages: List<Message>,
-        val temperature: Double = 0.7,
-        val max_tokens: Int = 512
+        val messages: List<ChatMessage>,
+        val stream: Boolean = false
     )
 
     @Serializable
-    private data class ChatResponse(val choices: List<Choice> = emptyList())
+    data class ChatResponse(val message: Message)
 
     @Serializable
-    private data class Choice(val message: Message)
+    data class Message(val role: String, val content: String)
 
-    suspend fun chat(prompt: String, history: List<Pair<String, String>> = emptyList()): String =
+    suspend fun chat(prompt: String, history: List<Pair<String, String>>): String =
         withContext(Dispatchers.IO) {
-            require(prompt.isNotBlank()) { "Prompt cannot be blank" }
-
-            val messages = buildList {
-                add(
-                    Message(
+            try {
+                val messages = mutableListOf(
+                    ChatMessage(
                         "system",
-                        "You are the user's custom Cyberpunk avatar. Respond in-character, using cyberpunk slang. Keep responses short, punchy, and immersive."
+                        "You are a helpful, slightly edgy AI avatar assistant."
                     )
                 )
-                history.forEach { (speaker, text) ->
-                    add(Message(if (speaker.equals("You", true)) "user" else "assistant", text))
+                history.forEach { (role, text) ->
+                    messages.add(
+                        ChatMessage(
+                            if (role == "You") "user" else "assistant",
+                            text
+                        )
+                    )
                 }
-                add(Message("user", prompt))
-            }
+                messages.add(ChatMessage("user", prompt))
 
-            val requestBody = json.encodeToString(ChatRequest(model = model, messages = messages))
-                .toRequestBody("application/json".toMediaType())
-            val endpoint = baseUrl.trimEnd('/') + "/chat/completions"
-            val request = Request.Builder()
-                .url(endpoint)
-                .header("Content-Type", "application/json")
-                .post(requestBody)
-                .build()
+                val requestBody = json.encodeToString(ChatRequest(MODEL_NAME, messages))
+                    .toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$OLLAMA_BASE_URL/api/chat")
+                    .post(requestBody)
+                    .build()
 
-            client.newCall(request).execute().use { response ->
-                val body = response.body?.string().orEmpty()
-                if (!response.isSuccessful) {
-                    throw IllegalStateException("Local Llama request failed: HTTP ${response.code} $body")
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw Exception("Ollama request failed: HTTP ${response.code}")
+                    }
+                    val responseBody = response.body?.string()
+                        ?: throw Exception("Empty response from Llama")
+                    val chatResponse = json.decodeFromString<ChatResponse>(responseBody)
+                    chatResponse.message.content
                 }
-                val parsed = json.decodeFromString<ChatResponse>(body)
-                parsed.choices.firstOrNull()?.message?.content?.trim()
-                    ?.takeIf { it.isNotEmpty() }
-                    ?: throw IllegalStateException("Local Llama returned no response")
+            } catch (e: Exception) {
+                "Error connecting to local Llama AI. Is your PC running Ollama? (${e.message})"
             }
         }
 }
