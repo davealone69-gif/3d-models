@@ -79,6 +79,12 @@ android {
         abortOnError = true
         checkReleaseBuilds = false
     }
+
+    // The on-device llama.cpp AAR currently targets arm64 Android devices.
+    // Keeping x86_64 out prevents shipping an unusable native backend.
+    defaultConfig.ndk {
+        abiFilters += listOf("arm64-v8a")
+    }
 }
 
 dependencies {
@@ -90,6 +96,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+
+    // On-device Llama.cpp inference. No Ollama server or network endpoint.
+    implementation("org.codeshipping:llama-kotlin-android:0.1.7")
 
     // Gemini API REST
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
