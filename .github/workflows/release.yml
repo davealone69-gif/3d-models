@@ -28,16 +28,18 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$KEYSTORE_PASSWORD"
           test -n "$KEY_ALIAS"
           test -n "$KEY_PASSWORD"
+          printf 'GEMINI_API_KEY=%s\nMESHY_API_KEY=%s\n' "$GEMINI_API_KEY" "$MESHY_API_KEY" > .env
           echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
           export KEYSTORE_PATH=$(pwd)/release.keystore
           export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
           gradle assembleRelease bundleRelease --stacktrace
-          rm -f release.keystore
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -47,3 +49,7 @@ jobs:
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
+
+      - name: Remove secrets
+        if: always()
+        run: rm -f .env release.keystore
