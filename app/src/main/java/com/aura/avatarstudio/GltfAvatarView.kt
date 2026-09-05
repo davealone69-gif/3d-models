@@ -5,10 +5,8 @@ package com.aura.avatarstudio
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
-import com.aura.avatarstudio.api.GeneratedAvatarStore
 import com.aura.avatarstudio.renderer.GltfAvatarLoader
 import com.aura.avatarstudio.renderer.HdAvatarRenderer
-import java.io.File
 
 /** Touch-wired GL view with deterministic asynchronous avatar loading. */
 class GltfAvatarView(
@@ -19,11 +17,9 @@ class GltfAvatarView(
 
     private val renderer = HdAvatarRenderer(context)
     @Volatile private var loadStarted = false
-    @Volatile private var generatedLoadStarted = false
     @Volatile private var surfaceReady = false
 
     init {
-        GeneratedAvatarStore.initialize(context)
         setEGLContextClientVersion(3)
         setEGLConfigChooser { egl, display ->
             val attribs = intArrayOf(
@@ -51,7 +47,6 @@ class GltfAvatarView(
                 renderer.onSurfaceCreated(gl, config)
                 surfaceReady = true
                 loadStarted = false
-                generatedLoadStarted = false
                 notifyState(false, null)
                 startAvatarLoad()
             }
@@ -64,9 +59,6 @@ class GltfAvatarView(
 
             override fun onDrawFrame(gl: javax.microedition.khronos.opengles.GL10?) {
                 renderer.onDrawFrame(gl)
-                if (!generatedLoadStarted) {
-                    GeneratedAvatarStore.consumeNew()?.let { file -> loadGeneratedAvatar(file) }
-                }
             }
         })
         renderMode = RENDERMODE_CONTINUOUSLY
@@ -99,40 +91,6 @@ class GltfAvatarView(
                 )
             }
         }.apply { name = "AvatarLoader" }.start()
-    }
-
-    private fun loadGeneratedAvatar(file: File) {
-        if (!surfaceReady || generatedLoadStarted) return
-        generatedLoadStarted = true
-        notifyState(false, null)
-        Thread {
-            val result = runCatching { GltfAvatarLoader(context).loadGlb(file.readBytes()) }
-            queueEvent {
-                result.fold(
-                    onSuccess = { avatar ->
-                        runCatching { renderer.setAvatar(avatar) }
-                            .onSuccess {
-                                generatedLoadStarted = false
-                                notifyState(true, null)
-                            }
-                            .onFailure { error ->
-                                generatedLoadStarted = false
-                                notifyState(false, error.message ?: error.javaClass.simpleName)
-                            }
-                    },
-                    onFailure = { error ->
-                        generatedLoadStarted = false
-                        notifyState(false, error.message ?: error.javaClass.simpleName)
-                    }
-                )
-            }
-        }.apply { name = "GeneratedAvatarLoader" }.start()
-    }
-
-    /** Consume and load the newest AI-generated GLB immediately. */
-    fun reloadGeneratedAvatar() {
-        if (!surfaceReady || generatedLoadStarted) return
-        GeneratedAvatarStore.consumeNew()?.let { file -> loadGeneratedAvatar(file) }
     }
 
     fun reloadAvatar() {
