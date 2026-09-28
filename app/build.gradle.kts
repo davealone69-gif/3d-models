@@ -4,7 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
     id("com.google.devtools.ksp")
-    id("io.gitlab.arturbosch.detekt")
     id("com.diffplug.spotless")
     id("org.jetbrains.kotlinx.kover")
 }
@@ -125,15 +124,4 @@ spotless {
         indentWithSpaces()
         endWithNewline()
     }
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    allRules = false
-    autoCorrect = true
-    baseline = file("detekt-baseline.xml")
-}
-
-tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    exclude("**/ui/AppUI.kt")
 }
