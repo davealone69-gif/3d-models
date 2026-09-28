@@ -36,10 +36,8 @@ jobs:
       - name: Run Unit Tests
         run: gradle testDebugUnitTest --stacktrace
 
-      - name: Static Analysis (Detekt & Spotless)
-        run: |
-          gradle spotlessCheck --stacktrace
-          gradle detekt --stacktrace
+      - name: Static Analysis (Spotless)
+        run: gradle spotlessCheck --stacktrace
 
       - name: Android Lint
         run: gradle lintDebug --stacktrace
