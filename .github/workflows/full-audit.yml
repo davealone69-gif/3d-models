@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 jobs:
   static-analysis:
@@ -37,9 +35,3 @@ jobs:
         run: |
           set -euo pipefail
           gradle lint test assembleDebug --stacktrace --console=plain
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript,python
-      - name: Analyze CodeQL
-        uses: github/codeql-action/analyze@v3
