@@ -86,11 +86,11 @@ fun LocalAiSetupDialog(
                 onClick = {
                     scope.launch {
                         testing = true
-                        status = "Testing local runner..."
+                        status = "Checking API response and model list. This does not test chat generation..."
                         LocalLlamaService.saveSettings(context, endpoint, model, token)
                         LocalLlamaService.testConnection(context).fold(
                             onSuccess = { detectedModel ->
-                                status = "CONNECTED: $detectedModel"
+                                status = "SERVER RESPONDS: $detectedModel. Chat generation is not verified until a real prompt succeeds."
                                 testing = false
                                 onSaved()
                             },
@@ -101,7 +101,7 @@ fun LocalAiSetupDialog(
                         )
                     }
                 }
-            ) { Text(if (testing) "TESTING..." else "SAVE & TEST") }
+            ) { Text(if (testing) "TESTING..." else "SAVE & TEST API") }
         }
     )
 }
