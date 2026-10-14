@@ -24,8 +24,8 @@ object LocalLlamaService {
     private const val ENDPOINT_KEY = "endpoint"
     private const val MODEL_KEY = "model"
     private const val TOKEN_KEY = "token"
-    private const val DEFAULT_ENDPOINT = "http://127.0.0.1:8088"
-    private const val DEFAULT_MODEL = "llama-3.2-3b-instruct"
+    private const val DEFAULT_ENDPOINT = "http://127.0.0.1:11434"
+    private const val DEFAULT_MODEL = "llama3.2:1b"
     private const val CHAT_PATH = "/v1/chat/completions"
     private const val MODELS_PATH = "/v1/models"
 
@@ -134,7 +134,7 @@ object LocalLlamaService {
                     ?: error("Local AI returned no message content")
             }
         } catch (e: Exception) {
-            "Local AI unavailable at ${normalizeBaseUrl(endpoint(context))}. Start the Android Llama runner and load Llama 3.2, then retry. (${e.message ?: "connection error"})"
+            "Local AI unavailable at ${normalizeBaseUrl(endpoint(context))}. Start Ollama in Termux with `ollama serve` and ensure the configured model is installed, then retry. (${e.message ?: "connection error"})"
         }
     }
 
