@@ -29,8 +29,8 @@ fun LocalAiSetupDialog(
     onDismiss: () -> Unit,
     onSaved: () -> Unit
 ) {
-    var endpoint by remember { mutableStateOf("http://127.0.0.1:8088") }
-    var model by remember { mutableStateOf("llama-3.2-3b-instruct") }
+    var endpoint by remember { mutableStateOf("http://127.0.0.1:11434") }
+    var model by remember { mutableStateOf("llama3.2:1b") }
     var token by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var testing by remember { mutableStateOf(false) }
@@ -49,7 +49,7 @@ fun LocalAiSetupDialog(
         text = {
             Column {
                 Text(
-                    "Android-local Llama runner. Nothing is sent to a cloud AI service.",
+                    "Phone-local Ollama endpoint. Nothing is sent to a cloud AI service. Start `ollama serve` in Termux and install the selected model before testing.",
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
                 OutlinedTextField(
